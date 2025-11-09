@@ -1,0 +1,4 @@
+{
+  "nomArea": "Ploteo",
+  "des": "Impresion de planos desde A3 - A0."
+}

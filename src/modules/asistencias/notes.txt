@@ -1,0 +1,9 @@
+{
+  "id_persona": 1,
+  "fecha_ingreso": "2025-09-23",
+  "metodo_registro": "reconocimientoFacial",
+  "fecha_salida": "2025-09-23",
+  "miniTardanza": 20,
+  "hora_entrada": "08:20:00",
+  "hora_salida": "17:00:00"
+}

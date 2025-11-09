@@ -1,0 +1,6 @@
+{
+    "hora": "Turno Mañana",
+    "fechInicio": "08:00:00",
+    "fechFin": "16:00:00",
+    "work": 2
+}

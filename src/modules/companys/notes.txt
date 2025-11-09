@@ -1,0 +1,5 @@
+{
+    "company": "ServiTech",
+    "ruc": "20102589634",
+    "ubi": "Jr. Colonos los fundadores N° 404"  
+}

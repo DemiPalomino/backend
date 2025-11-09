@@ -1,0 +1,9 @@
+{
+  "dni": "74589658",
+  "nombres": "Ana Pilar",
+  "apellidos": "Pérez Perales",
+  "email": "anaperez@gmail.com",
+  "phone": "985632587",
+  "fecha_nace": "1990-05-14",
+  "id_area": 2
+}

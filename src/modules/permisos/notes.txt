@@ -1,0 +1,9 @@
+{
+    "fechaSolicitud": "2024-09-19",
+    "fechaInicioAusencia": "2024-09-20 08:00:00",
+    "fechaFinAusencia": "2024-09-27 17:00:00",
+    "tipoPermiso": "vacaciones",
+    "jus": "Maternidad (dare a luz a mi primogenito)",
+    "estado": "aprobado",
+    "id_persona": 1
+}

@@ -1,0 +1,2 @@
+const salt = await bcrypt.genSalt(10); // factor de coste (10 está bien)
+const hashedPassword = await bcrypt.hash(password, salt);

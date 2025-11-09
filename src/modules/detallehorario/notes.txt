@@ -1,0 +1,5 @@
+  {
+    "ingreso_entrada": "2025-09-23",
+    "ingreso_salida": "2025-09-23", 
+    "id_horario": 2
+  }

@@ -1,0 +1,5 @@
+
+{
+    "nombre_tipo": "Empleado",
+    "descripcion": "Registra su asistencia y visualiza su dashbboard."
+}

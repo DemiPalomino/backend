@@ -1,0 +1,8 @@
+crear usuario:
+
+{
+    "id": 7,
+    "user": "Mary",
+    "pass": "Mary123",
+    "tipo": 0  
+}
