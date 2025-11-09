@@ -16,7 +16,7 @@ export const DB_PASSWORD = process.env.DB_PASSWORD || ""
 export const DB_DATABASE = process.env.DB_DATABASE || "asisreconofacial"
 
 // Para mi token
-export const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_development_change_in_production"
+export const JWT_SECRET = process.env.JWT_SECRET;
 export const JWT_EXPIRES = process.env.JWT_EXPIRES || "1h"
 
 // Validar conexión a BD
