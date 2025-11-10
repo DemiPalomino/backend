@@ -6,16 +6,14 @@ import {
   updateArea,
   deleteArea,
 } from "./areas.controller.js";
-import { verifyToken, requireRole } from "../../middlewares/auth.middleware.js";
-import { validateRequest, areaSchema } from "../../middlewares/validation.middleware.js";
 
 const router = Router();
 
-// ✅ RUTAS ESTANDARIZADAS
-router.get("/areas", verifyToken, getAreas);
-router.get("/areas/:id", verifyToken, getArea);
-router.post("/areas", verifyToken, requireRole([1, 4]), validateRequest(areaSchema), createArea);
-router.put("/areas/:id", verifyToken, requireRole([1, 4]), validateRequest(areaSchema), updateArea);
-router.delete("/areas/:id", verifyToken, requireRole([1]), deleteArea);
+// ✅ Asegúrate de que las rutas sean consistentes
+router.get("/areas", getAreas);
+router.get("/areas/:id", getArea);
+router.post("/areas", createArea);
+router.put("/areas/:id", updateArea);
+router.delete("/areas/:id", deleteArea);
 
 export default router;
