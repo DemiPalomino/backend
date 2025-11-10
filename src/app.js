@@ -22,7 +22,6 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 
 // ✅ app definido AL INICIO
 const app = express();
-
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -39,7 +38,7 @@ app.use(compression());
 app.use(morgan('combined'));
 
 app.use(cors({
-    origin: "http://localhost:3000",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"]
