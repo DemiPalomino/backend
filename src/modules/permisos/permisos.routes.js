@@ -6,16 +6,16 @@ import {
   updatePermiso,
   deletePermiso,
 } from "./permisos.controller.js";
-import { verifyToken, requireRole } from "../../middlewares/auth.middleware.js";
+
 
 const router = Router();
 
 // ✅ RUTAS ESTANDARIZADAS
-router.get("/permisos", verifyToken, getPermisos);
-router.get("/permisos/:id", verifyToken, getPermiso);
-router.post("/permisos", verifyToken, createPermiso); // Empleados pueden solicitar
-router.put("/permisos/:id", verifyToken, requireRole([1, 4]), updatePermiso);
-router.delete("/permisos/:id", verifyToken, requireRole([1]), deletePermiso);
+router.get("/permisos", getPermisos);
+router.get("/permisos/:id", getPermiso);
+router.post("/permisos", createPermiso); 
+router.put("/permisos/:id", updatePermiso);
+router.delete("/permisos/:id", deletePermiso);
 
 
 export default router;

@@ -6,16 +6,16 @@ import {
   updateHorario,
   deleteHorario,
 } from "./horario.controller.js";
-import { verifyToken, requireRole } from "../../middlewares/auth.middleware.js";
+
 
 const router = Router();
 
 // ✅ RUTAS ESTANDARIZADAS
-router.get("/horarios", verifyToken, getHorarios);
-router.get("/horarios/:id", verifyToken, getHorario);
-router.post("/horarios", verifyToken, requireRole([1, 4]), createHorario);
-router.put("/horarios/:id", verifyToken, requireRole([1, 4]), updateHorario);
-router.delete("/horarios/:id", verifyToken, requireRole([1]), deleteHorario);
+router.get("/horarios", getHorarios);
+router.get("/horarios/:id", getHorario);
+router.post("/horarios", createHorario);
+router.put("/horarios/:id", updateHorario);
+router.delete("/horarios/:id", deleteHorario);
 
 
 export default router;
