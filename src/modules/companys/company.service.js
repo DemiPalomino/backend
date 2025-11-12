@@ -11,21 +11,21 @@ export const companyService = {
         return rows[0];
     },
 
-    create: async ({ id, company, ruc, ubi}) => {
-        //const contrasena = await bcrypt.hash(pass, 10);
+    create: async ({ id, nombre_empresa, ruc, direccion}) => {
+
         const [result] = await db.query(
             "INSERT INTO datos_de_la_empresa (id_empresa, nombre_empresa, ruc, direccion) VALUES (?, ?, ?, ?)",
-            [id, company, ruc, ubi]
+            [id, nombre_empresa, ruc, direccion]
         );
-        return { id, company, ruc, ubi };
+        return { id, nombre_empresa, ruc, direccion };
     },
 
-    update: async (id, {company, ruc, ubi}) => {
+    update: async (id, {nombre_empresa, ruc, direccion}) => {
         let query = "UPDATE datos_de_la_empresa SET nombre_empresa=?, ruc=?, direccion=? WHERE id_empresa=?";
-        let params = [company, ruc, ubi, id];
+        let params = [nombre_empresa, ruc, direccion, id];
 
         await db.query(query, params);
-        return { id, company, ruc, ubi };
+        return { id, nombre_empresa, ruc, direccion };
     },
 
     remove: async (id) => {
