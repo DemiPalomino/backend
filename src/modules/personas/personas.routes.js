@@ -10,7 +10,7 @@ import {
 
 const router = Router();
 
-// ✅ RUTAS ESTANDARIZADAS
+
 router.get("/personas", getPersonas);
 router.get("/personas/:id", getPersona);
 router.post("/personas", createPersona);
