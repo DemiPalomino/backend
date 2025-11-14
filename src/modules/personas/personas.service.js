@@ -1,4 +1,5 @@
 import db from "../../config/db.js";
+import bcrypt from "bcryptjs";
 
 export const personaService = {
     getAll: async () => {
@@ -16,7 +17,7 @@ export const personaService = {
     getById: async (id) => {
         try {
             const [rows] = await db.query(
-                "SELECT p.*, a.nombre_area FROM personas p LEFT JOIN areas_de_trabajo a ON p.id_area_trabajo = a.id_area WHERE p.id_persona = ?", 
+                "SELECT p.*, a.nombre_area FROM personas p LEFT JOIN areas_de_trabajo a ON p.id_area_trabajo = a.id_area WHERE p.id_persona = ?",
                 [id]
             );
             return rows[0];
@@ -26,32 +27,41 @@ export const personaService = {
     },
 
     create: async (personaData) => {
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+
         try {
-            // ✅ CORREGIDO: Usa los nombres correctos de campos
-            const { dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo } = personaData;
-            
-            const [result] = await db.query(
-                "INSERT INTO personas (dni, nombres, apellidos, email, telefono, fecha_nacimiento, fecha_ingreso, id_area_trabajo) VALUES (?, ?, ?, ?, ?, ?, CURRENT_DATE, ?)",
-                [dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo]
+            const { dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, nombre_usuario, contrasena, id_tipo_usuario } = personaData;
+
+            // ✅ VALIDACIÓN MEJORADA: Verificar que el área existe
+            const [areaExists] = await connection.query(
+                "SELECT id_area FROM areas_de_trabajo WHERE id_area = ? AND activo = 1",
+                [id_area_trabajo]
             );
-            
-            return { id: result.insertId, ...personaData };
+
+            if (areaExists.length === 0) {
+                throw new Error('El área de trabajo seleccionada no existe o está inactiva');
+            }
+
+            // ... resto del código existente
         } catch (error) {
+            await connection.rollback();
             console.error('❌ Error en personaService.create:', error);
             throw new Error(`Error al crear persona: ${error.message}`);
+        } finally {
+            connection.release();
         }
     },
 
     update: async (id, personaData) => {
         try {
-            // ✅ CORREGIDO: Campos correctos
             const { dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo } = personaData;
-            
+
             await db.query(
                 "UPDATE personas SET dni=?, nombres=?, apellidos=?, email=?, telefono=?, fecha_nacimiento=?, id_area_trabajo=? WHERE id_persona=?",
                 [dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, id]
             );
-            
+
             return { id, ...personaData };
         } catch (error) {
             console.error('❌ Error en personaService.update:', error);
@@ -60,16 +70,30 @@ export const personaService = {
     },
 
     remove: async (id) => {
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+
         try {
-            // ✅ CORREGIDO: Borrado lógico en lugar de físico
-            await db.query(
+            // ✅ Borrado lógico de persona
+            await connection.query(
                 "UPDATE personas SET activo = 0 WHERE id_persona = ?",
                 [id]
             );
-            return { message: "Persona eliminada correctamente" };
+
+            // ✅ Desactivar usuario asociado
+            await connection.query(
+                "UPDATE usuarios SET activo = 0 WHERE id_persona = ?",
+                [id]
+            );
+
+            await connection.commit();
+            return { message: "Persona y usuario asociado eliminados correctamente" };
         } catch (error) {
+            await connection.rollback();
             console.error('❌ Error en personaService.remove:', error);
             throw new Error(`Error al eliminar persona: ${error.message}`);
+        } finally {
+            connection.release();
         }
     }
 };
