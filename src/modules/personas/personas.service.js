@@ -33,20 +33,72 @@ export const personaService = {
         try {
             const { dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, nombre_usuario, contrasena, id_tipo_usuario } = personaData;
 
-            // ✅ VALIDACIÓN MEJORADA: Verificar que el área existe
+            console.log('📝 Datos recibidos para crear persona:', personaData);
+
+            // ✅ VALIDACIÓN: Verificar que el área existe
             const [areaExists] = await connection.query(
-                "SELECT id_area FROM areas_de_trabajo WHERE id_area = ? AND activo = 1",
+                "SELECT id_area FROM areas_de_trabajo WHERE id_area = ?",
                 [id_area_trabajo]
             );
 
             if (areaExists.length === 0) {
-                throw new Error('El área de trabajo seleccionada no existe o está inactiva');
+                throw new Error('El área de trabajo seleccionada no existe');
             }
 
-            // ... resto del código existente
+            // ✅ AGREGAR FECHA_INGRESO (campo requerido)
+            const fecha_ingreso = new Date().toISOString().split('T')[0]; // Fecha actual
+
+            // ✅ Insertar persona
+            const [personaResult] = await connection.query(
+                "INSERT INTO personas (dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, fecha_ingreso) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, fecha_ingreso]
+            );
+
+            const id_persona = personaResult.insertId;
+
+            // ✅ Si se proporcionaron datos de usuario, crear usuario
+            if (nombre_usuario && contrasena && id_tipo_usuario) {
+                // Validar que el tipo de usuario existe
+                const [tipoUsuarioExists] = await connection.query(
+                    "SELECT id_tipo_usuario FROM tipo_de_usuario WHERE id_tipo_usuario = ?",
+                    [id_tipo_usuario]
+                );
+
+                if (tipoUsuarioExists.length === 0) {
+                    throw new Error('El tipo de usuario seleccionado no existe');
+                }
+
+                // Encriptar contraseña
+                const hashedPassword = await bcrypt.hash(contrasena, 10);
+
+                await connection.query(
+                    "INSERT INTO usuarios (nombre_usuario, contrasena, id_tipo_usuario, id_persona) VALUES (?, ?, ?, ?)",
+                    [nombre_usuario, hashedPassword, id_tipo_usuario, id_persona]
+                );
+            }
+
+            await connection.commit();
+
+            // Obtener la persona recién creada
+            const [nuevaPersona] = await connection.query(
+                "SELECT p.*, a.nombre_area FROM personas p LEFT JOIN areas_de_trabajo a ON p.id_area_trabajo = a.id_area WHERE p.id_persona = ?",
+                [id_persona]
+            );
+
+            console.log('✅ Persona creada exitosamente:', nuevaPersona[0]);
+            return nuevaPersona[0];
         } catch (error) {
             await connection.rollback();
             console.error('❌ Error en personaService.create:', error);
+            
+            // ✅ MEJOR MANEJO DE ERRORES ESPECÍFICOS
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error('El DNI o email ya existe en el sistema');
+            }
+            if (error.code === 'ER_NO_REFERENCED_ROW') {
+                throw new Error('El área de trabajo seleccionada no existe');
+            }
+            
             throw new Error(`Error al crear persona: ${error.message}`);
         } finally {
             connection.release();

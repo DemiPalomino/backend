@@ -18,11 +18,11 @@ export const areasService = {
     getById: async (id) => {
         try {
             const [rows] = await db.query(
-                "SELECT * FROM areas_de_trabajo WHERE id_area = ? AND activo = 1",
+                "SELECT * FROM areas_de_trabajo WHERE id_area = ?",
                 [id]
             );
             if (rows.length === 0) {
-                throw new Error('Área no encontrada o inactiva');
+                throw new Error('Área no encontrada');
             }
             return rows[0];
         } catch (error) {
