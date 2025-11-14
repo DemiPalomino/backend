@@ -9,7 +9,7 @@ import {
 
 const router = Router();
 
-// ✅ CORREGIDO: Rutas consistentes con el frontend
+
 router.get("/sucursales",  getSucursals);
 router.get("/sucursales/:id",getSucursal);
 router.post("/sucursales", createSucursal);

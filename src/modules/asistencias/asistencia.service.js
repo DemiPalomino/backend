@@ -16,15 +16,15 @@ export const asistenciaService = {
             "INSERT INTO asistencias (id_persona, fecha_ingreso, metodo_registro, fecha_salida, miniTardanza, hora_entrada, hora_salida) VALUES (?, ?, ?, ?, ?, ?, ?)",
             [id_persona, fecha_ingreso, metodo_registro, fecha_salida, miniTardanza, hora_entrada, hora_salida]
         );
-        return { 
+        return {
             id_asistencia: result.insertId,
-            id_persona, 
-            fecha_ingreso, 
-            metodo_registro, 
-            fecha_salida, 
-            miniTardanza, 
-            hora_entrada, 
-            hora_salida 
+            id_persona,
+            fecha_ingreso,
+            metodo_registro,
+            fecha_salida,
+            miniTardanza,
+            hora_entrada,
+            hora_salida
         };
     },
 
@@ -45,14 +45,14 @@ export const asistenciaService = {
 
     registrarAsistenciaFacial: async (id_persona, metodo_registro = "facial") => {
         const connection = await db.getConnection();
-        
+
         try {
             await connection.beginTransaction();
 
             const fecha_actual = new Date();
             const fecha_solo = fecha_actual.toISOString().split('T')[0];
 
-            // Verificar persona activa
+       
             const [persona] = await connection.query(`
                 SELECT p.id_persona, p.activo, h.id_horario
                 FROM personas p
@@ -64,7 +64,7 @@ export const asistenciaService = {
                 throw new Error("Persona no encontrada o inactiva");
             }
 
-            // Consulta de asistencia existente hoy
+  
             const [asistenciaExistente] = await connection.query(`
                 SELECT id_asistencia, fecha_ingreso, fecha_salida 
                 FROM asistencias 
@@ -73,23 +73,23 @@ export const asistenciaService = {
             `, [id_persona, fecha_solo]);
 
             let resultado;
-            
+
             if (asistenciaExistente.length > 0) {
                 const ultimaAsistencia = asistenciaExistente[0];
-                
-                // Si ya tiene salida registrada, crear nueva entrada
+
+             
                 if (ultimaAsistencia.fecha_salida) {
                     resultado = await asistenciaService.registrarEntrada(
                         connection, id_persona, fecha_actual, metodo_registro
                     );
                 } else {
-                    // Registrar salida
+                   
                     resultado = await asistenciaService.registrarSalida(
                         connection, ultimaAsistencia.id_asistencia, fecha_actual
                     );
                 }
             } else {
-                // No tiene asistencia hoy, registrar entrada
+               
                 resultado = await asistenciaService.registrarEntrada(
                     connection, id_persona, fecha_actual, metodo_registro
                 );
@@ -108,7 +108,7 @@ export const asistenciaService = {
     },
 
     registrarEntrada: async (connection, id_persona, fecha_actual, metodo_registro) => {
-        // Obtener horario de la persona
+       
         const [horarioData] = await connection.query(`
             SELECT dh.ingreso_entrada
             FROM personas p
@@ -118,7 +118,7 @@ export const asistenciaService = {
         `, [id_persona, fecha_actual]);
 
         let miniTardanza = 0;
-        
+
         if (horarioData.length > 0 && horarioData[0].ingreso_entrada) {
             const hora_entrada_programada = new Date(`${fecha_actual.toDateString()} ${horarioData[0].ingreso_entrada}`);
             const diferencia = fecha_actual.getTime() - hora_entrada_programada.getTime();
@@ -137,8 +137,8 @@ export const asistenciaService = {
             id_asistencia: result.insertId,
             fecha_ingreso: fecha_actual,
             miniTardanza,
-            mensaje: miniTardanza > 0 
-                ? `Entrada registrada con ${miniTardanza} minutos de tardanza` 
+            mensaje: miniTardanza > 0
+                ? `Entrada registrada con ${miniTardanza} minutos de tardanza`
                 : 'Entrada registrada puntualmente'
         };
     },
@@ -168,13 +168,101 @@ export const asistenciaService = {
              WHERE p.id_persona = ? AND dh.dia_semana = DAYOFWEEK(NOW())`,
             [id_persona]
         );
-        
+
         if (horario.length === 0) return 0;
-        
+
         const hora_entrada_programada = new Date(horario[0].ingreso_entrada);
         const diferencia = hora_entrada_real - hora_entrada_programada;
         const diferenciaEnMinutos = Math.round(diferencia / (1000 * 60));
-        
+
         return Math.max(0, diferenciaEnMinutos);
+    },
+    obtenerDescriptoresEmpleados: async () => {
+    try {
+        console.log('🔍 Buscando empleados con descriptores faciales...');
+        
+        
+        const [rows] = await db.query(`
+            SELECT 
+                p.id_persona,
+                p.nombres,
+                p.apellidos, 
+                p.dni,
+                p.descriptor_facial as descriptor
+            FROM personas p 
+            WHERE p.activo = 1 
+            AND p.descriptor_facial IS NOT NULL
+            AND TRIM(p.descriptor_facial) != ''
+            AND p.descriptor_facial != 'null'
+        `);
+        
+        console.log(`✅ Encontrados ${rows.length} empleados con descriptores`);
+        
+        if (rows.length === 0) {
+            console.log('⚠️ No se encontraron empleados con descriptores faciales');
+            return [];
+        }
+        
+ 
+        const empleadosConDescriptores = rows.map(emp => {
+            try {
+                console.log(`Procesando descriptor para ${emp.nombres}:`, emp.descriptor);
+                
+                if (!emp.descriptor) {
+                    console.warn(`⚠️ Descriptor vacío para empleado ${emp.id_persona}`);
+                    return null;
+                }
+                
+                let descriptorArray;
+                
+                if (typeof emp.descriptor === 'string') {
+                   
+                    const descriptorLimpio = emp.descriptor.trim();
+                    descriptorArray = JSON.parse(descriptorLimpio);
+                } else {
+                    descriptorArray = emp.descriptor;
+                }
+        
+                if (Array.isArray(descriptorArray) && descriptorArray.length > 0) {
+                    console.log(`✅ Descriptor válido para ${emp.nombres}: ${descriptorArray.length} elementos`);
+                    return {
+                        id_persona: emp.id_persona,
+                        nombres: emp.nombres,
+                        apellidos: emp.apellidos,
+                        dni: emp.dni,
+                        descriptor: descriptorArray
+                    };
+                } else {
+                    console.warn(`⚠️ Descriptor no es array válido para empleado ${emp.id_persona}`);
+                    return null;
+                }
+            } catch (parseError) {
+                console.error(`❌ Error parseando descriptor para empleado ${emp.id_persona}:`, parseError);
+                console.error(`Descriptor problemático:`, emp.descriptor);
+                return null;
+            }
+        }).filter(emp => emp !== null);
+        
+        console.log(`🎯 Finalmente ${empleadosConDescriptores.length} empleados con descriptores válidos`);
+        return empleadosConDescriptores;
+        
+    } catch (error) {
+        console.error('❌ Error en obtenerDescriptoresEmpleados:', error);
+      
+        return [];
     }
+},
+
+    
+    registrarDescriptorFacial: async (id_persona, descriptor) => {
+        const descriptorString = JSON.stringify(descriptor);
+
+        const [result] = await db.query(
+            "UPDATE personas SET descriptor_facial = ? WHERE id_persona = ?",
+            [descriptorString, id_persona]
+        );
+
+        return result;
+    }
+
 };

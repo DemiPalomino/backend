@@ -45,3 +45,41 @@ export const deleteAsistencia = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const registrarAsistenciaFacial = async (req, res) => {
+  try {
+    const { id_persona } = req.body;
+    
+    if (!id_persona) {
+      return res.status(400).json({ error: "ID de persona requerido" });
+    }
+
+    const resultado = await asistenciaService.registrarAsistenciaFacial(id_persona);
+    res.json(resultado);
+  } catch (error) {
+    console.error('Error en registro facial:', error);
+    res.status(500).json({ 
+      error: error.message || "Error al registrar asistencia facial" 
+    });
+  }
+};
+
+export const obtenerDescriptoresEmpleados = async (req, res) => {
+    try {
+        console.log('📋 Solicitando descriptores de empleados...');
+        const descriptores = await asistenciaService.obtenerDescriptoresEmpleados();
+        
+        console.log(`✅ Descriptores obtenidos: ${descriptores.length} empleados`);
+        
+        if (descriptores.length === 0) {
+            console.log('⚠️ No hay empleados con descriptores faciales registrados');
+            return res.json([]); 
+        }
+        
+        res.json(descriptores);
+    } catch (error) {
+        console.error('❌ Error obteniendo descriptores:', error);
+      
+        res.json([]);
+    }
+};
