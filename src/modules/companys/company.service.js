@@ -32,8 +32,7 @@ export const companyService = {
         let query = "DELETE FROM datos_de_la_empresa WHERE id_empresa = ?";
         let params = [id];
         await db.query(query, params);
-
-        //await db.query("DELETE FROM users WHERE id = ?", [id]); 
+        
         return { message: "Datos de empresa eliminada" };
     },
 

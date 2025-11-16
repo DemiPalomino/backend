@@ -10,7 +10,7 @@ import {
 
 const router = Router();
 
-// ✅ RUTAS ESTANDARIZADAS
+
 router.get("/horarios", getHorarios);
 router.get("/horarios/:id", getHorario);
 router.post("/horarios", createHorario);

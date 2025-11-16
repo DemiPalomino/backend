@@ -3,7 +3,7 @@ import db from "../../config/db.js";
 export const horarioService = {
     getAll: async () => {
         try {
-            console.log('🔍 Obteniendo todos los horarios...');
+            console.log('Obteniendo todos los horarios...');
             const [rows] = await db.query(`
                 SELECT 
                     h.id_horario,
@@ -17,10 +17,10 @@ export const horarioService = {
                 LEFT JOIN areas_de_trabajo a ON h.id_area_trabajo = a.id_area
                 ORDER BY h.nombre_horario
             `);
-            console.log(`✅ ${rows.length} horarios encontrados`);
+            console.log(`${rows.length} horarios encontrados`);
             return rows;
         } catch (error) {
-            console.error('❌ Error en horarioService.getAll:', error);
+            console.error('Error en horarioService.getAll:', error);
             throw new Error(`Error al obtener horarios: ${error.message}`);
         }
     },
@@ -49,7 +49,7 @@ export const horarioService = {
 
     create: async (horarioData) => {
         try {
-            console.log('📝 Creando horario con datos:', horarioData);
+            console.log('Creando horario con datos:', horarioData);
             const { nombre_horario, hora_entrada, hora_salida, id_area_trabajo, estado = 1 } = horarioData;
             
             const [result] = await db.query(
@@ -66,10 +66,10 @@ export const horarioService = {
                 estado
             };
             
-            console.log('✅ Horario creado con ID:', result.insertId);
+            console.log('Horario creado con ID:', result.insertId);
             return nuevoHorario;
         } catch (error) {
-            console.error('❌ Error en horarioService.create:', error);
+            console.error('Error en horarioService.create:', error);
             throw new Error(`Error al crear horario: ${error.message}`);
         }
     },

@@ -3,7 +3,7 @@ import db from "../../config/db.js";
 export const sucursalService = {
     getAll: async () => {
         try {
-            console.log('🔍 Obteniendo todas las sucursales...');
+            console.log('Obteniendo todas las sucursales...');
             const [rows] = await db.query(`
                 SELECT s.*, a.nombre_area 
                 FROM sucursales s 
@@ -11,10 +11,10 @@ export const sucursalService = {
                 WHERE s.activo = 1
                 ORDER BY s.nombre_sucursal
             `);
-            console.log(`✅ ${rows.length} sucursales encontradas`);
+            console.log(`${rows.length} sucursales encontradas`);
             return rows;
         } catch (error) {
-            console.error('❌ Error en sucursalService.getAll:', error);
+            console.error('Error en sucursalService.getAll:', error);
             throw new Error(`Error al obtener sucursales: ${error.message}`);
         }
     },
@@ -36,9 +36,8 @@ export const sucursalService = {
 
     create: async (sucursalData) => {
         try {
-            console.log('📝 Creando sucursal con datos:', sucursalData);
+            console.log('Creando sucursal con datos:', sucursalData);
             
-            // ✅ CORREGIDO: Campos actualizados
             const { nombre_sucursal, direccion, telefono, id_area_trabajo } = sucursalData;
             
             const [result] = await db.query(
@@ -55,18 +54,18 @@ export const sucursalService = {
                 activo: 1
             };
             
-            console.log('✅ Sucursal creada con ID:', result.insertId);
+            console.log('Sucursal creada con ID:', result.insertId);
             return nuevaSucursal;
             
         } catch (error) {
-            console.error('❌ Error en sucursalService.create:', error);
+            console.error('Error en sucursalService.create:', error);
             throw new Error(`Error al crear sucursal: ${error.message}`);
         }
     },
 
     update: async (id, sucursalData) => {
         try {
-            // ✅ CORREGIDO: Campos actualizados
+        
             const { nombre_sucursal, direccion, telefono, id_area_trabajo } = sucursalData;
             
             await db.query(
@@ -89,7 +88,7 @@ export const sucursalService = {
 
     remove: async (id) => {
         try {
-            // ✅ CORREGIDO: Borrado lógico
+          
             await db.query(
                 "UPDATE sucursales SET activo = 0 WHERE id_sucursal = ?",
                 [id]

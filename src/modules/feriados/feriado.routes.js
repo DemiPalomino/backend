@@ -10,7 +10,7 @@ import { verifyToken, requireRole } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 
-// ✅ RUTAS ESTANDARIZADAS
+
 router.get("/feriados", verifyToken, getFeriados);
 router.get("/feriados/:id", verifyToken, getFeriado);
 router.post("/feriados", verifyToken, requireRole([1, 4]), createFeriado);

@@ -10,7 +10,7 @@ import {
 
 const router = Router();
 
-// ✅ RUTAS ESTANDARIZADAS
+// RUTAS ESTANDARIZADAS
 router.get("/companies", getCompanys);
 router.get("/companies/:id", getCompany);
 router.post("/companies", createCompany);

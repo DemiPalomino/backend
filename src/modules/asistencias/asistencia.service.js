@@ -107,6 +107,128 @@ export const asistenciaService = {
         }
     },
 
+    reconocerYRegistrarAsistencia: async (descriptorCapturado) => {
+        const connection = await db.getConnection();
+        
+        try {
+            await connection.beginTransaction();
+
+            // 1. Obtener todos los descriptores de empleados activos
+            const [empleados] = await connection.query(`
+                SELECT 
+                    p.id_persona,
+                    p.nombres,
+                    p.apellidos,
+                    p.dni,
+                    p.descriptor_facial,
+                    p.id_horario
+                FROM personas p 
+                WHERE p.activo = 1 
+                AND p.descriptor_facial IS NOT NULL
+                AND p.descriptor_facial != 'null'
+                AND TRIM(p.descriptor_facial) != ''
+            `);
+
+            if (empleados.length === 0) {
+                throw new Error('No hay empleados con rostros registrados en el sistema');
+            }
+
+            // 2. Buscar coincidencia
+            let empleadoReconocido = null;
+            let mejorSimilitud = 1; // FaceAPI usa distancia euclidiana (menor = mejor)
+
+            for (const empleado of empleados) {
+                try {
+                    const descriptorBD = typeof empleado.descriptor_facial === 'string' 
+                        ? JSON.parse(empleado.descriptor_facial)
+                        : empleado.descriptor_facial;
+
+                    if (!Array.isArray(descriptorBD)) continue;
+
+                    // Calcular similitud (distancia euclidiana)
+                    let distancia = 0;
+                    for (let i = 0; i < descriptorCapturado.length; i++) {
+                        const diff = descriptorCapturado[i] - descriptorBD[i];
+                        distancia += diff * diff;
+                    }
+                    distancia = Math.sqrt(distancia);
+
+                    console.log(`Comparando con ${empleado.nombres}: ${distancia}`);
+
+                    // Umbral óptimo: 0.45 - 0.6
+                    if (distancia < 0.6 && distancia < mejorSimilitud) {
+                        mejorSimilitud = distancia;
+                        empleadoReconocido = {
+                            ...empleado,
+                            similitud: distancia
+                        };
+                    }
+                } catch (error) {
+                    console.error(`Error procesando descriptor de ${empleado.nombres}:`, error);
+                    continue;
+                }
+            }
+
+            if (!empleadoReconocido) {
+                throw new Error('No se reconoció el rostro. Verifica la iluminación o registra tu rostro primero.');
+            }
+
+            console.log(`✅ Empleado reconocido: ${empleadoReconocido.nombres} (similitud: ${mejorSimilitud})`);
+
+            // 3. Registrar asistencia
+            const fecha_actual = new Date();
+            const fecha_solo = fecha_actual.toISOString().split('T')[0];
+
+            // Verificar si ya tiene entrada hoy
+            const [asistenciaExistente] = await connection.query(
+                `SELECT id_asistencia, fecha_ingreso, fecha_salida 
+                 FROM asistencias 
+                 WHERE id_persona = ? AND DATE(fecha_ingreso) = ?
+                 ORDER BY fecha_ingreso DESC LIMIT 1`,
+                [empleadoReconocido.id_persona, fecha_solo]
+            );
+
+            let resultado;
+
+            if (asistenciaExistente.length > 0 && !asistenciaExistente[0].fecha_salida) {
+                // Registrar salida
+                resultado = await asistenciaService.registrarSalida(
+                    connection, 
+                    asistenciaExistente[0].id_asistencia, 
+                    fecha_actual
+                );
+            } else {
+                // Registrar entrada
+                resultado = await asistenciaService.registrarEntrada(
+                    connection,
+                    empleadoReconocido.id_persona,
+                    fecha_actual,
+                    'reconocimientoFacial'
+                );
+            }
+
+            await connection.commit();
+
+            return {
+                ...resultado,
+                persona: {
+                    id_persona: empleadoReconocido.id_persona,
+                    nombres: empleadoReconocido.nombres,
+                    apellidos: empleadoReconocido.apellidos,
+                    dni: empleadoReconocido.dni
+                },
+                similitud: mejorSimilitud
+            };
+
+        } catch (error) {
+            await connection.rollback();
+            console.error('Error en reconocimiento facial:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
     registrarEntrada: async (connection, id_persona, fecha_actual, metodo_registro) => {
        
         const [horarioData] = await connection.query(`
@@ -179,7 +301,7 @@ export const asistenciaService = {
     },
     obtenerDescriptoresEmpleados: async () => {
     try {
-        console.log('🔍 Buscando empleados con descriptores faciales...');
+        console.log('Buscando empleados con descriptores faciales...');
         
         
         const [rows] = await db.query(`
@@ -196,10 +318,10 @@ export const asistenciaService = {
             AND p.descriptor_facial != 'null'
         `);
         
-        console.log(`✅ Encontrados ${rows.length} empleados con descriptores`);
+        console.log(`Encontrados ${rows.length} empleados con descriptores`);
         
         if (rows.length === 0) {
-            console.log('⚠️ No se encontraron empleados con descriptores faciales');
+            console.log('No se encontraron empleados con descriptores faciales');
             return [];
         }
         
@@ -209,7 +331,7 @@ export const asistenciaService = {
                 console.log(`Procesando descriptor para ${emp.nombres}:`, emp.descriptor);
                 
                 if (!emp.descriptor) {
-                    console.warn(`⚠️ Descriptor vacío para empleado ${emp.id_persona}`);
+                    console.warn(`Descriptor vacío para empleado ${emp.id_persona}`);
                     return null;
                 }
                 
@@ -224,7 +346,7 @@ export const asistenciaService = {
                 }
         
                 if (Array.isArray(descriptorArray) && descriptorArray.length > 0) {
-                    console.log(`✅ Descriptor válido para ${emp.nombres}: ${descriptorArray.length} elementos`);
+                    console.log(`Descriptor válido para ${emp.nombres}: ${descriptorArray.length} elementos`);
                     return {
                         id_persona: emp.id_persona,
                         nombres: emp.nombres,
@@ -233,21 +355,21 @@ export const asistenciaService = {
                         descriptor: descriptorArray
                     };
                 } else {
-                    console.warn(`⚠️ Descriptor no es array válido para empleado ${emp.id_persona}`);
+                    console.warn(`Descriptor no es array válido para empleado ${emp.id_persona}`);
                     return null;
                 }
             } catch (parseError) {
-                console.error(`❌ Error parseando descriptor para empleado ${emp.id_persona}:`, parseError);
+                console.error(`Error parseando descriptor para empleado ${emp.id_persona}:`, parseError);
                 console.error(`Descriptor problemático:`, emp.descriptor);
                 return null;
             }
         }).filter(emp => emp !== null);
         
-        console.log(`🎯 Finalmente ${empleadosConDescriptores.length} empleados con descriptores válidos`);
+        console.log(`Finalmente ${empleadosConDescriptores.length} empleados con descriptores válidos`);
         return empleadosConDescriptores;
         
     } catch (error) {
-        console.error('❌ Error en obtenerDescriptoresEmpleados:', error);
+        console.error('Error en obtenerDescriptoresEmpleados:', error);
       
         return [];
     }

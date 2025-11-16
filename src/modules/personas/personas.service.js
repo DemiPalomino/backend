@@ -9,7 +9,7 @@ export const personaService = {
             );
             return rows;
         } catch (error) {
-            console.error('❌ Error en personaService.getAll:', error);
+            console.error(' Error en personaService.getAll:', error);
             throw new Error(`Error al obtener personas: ${error.message}`);
         }
     },
@@ -33,9 +33,9 @@ export const personaService = {
         try {
             const { dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, nombre_usuario, contrasena, id_tipo_usuario } = personaData;
 
-            console.log('📝 Datos recibidos para crear persona:', personaData);
+            console.log('Datos recibidos para crear persona:', personaData);
 
-            // ✅ VALIDACIÓN: Verificar que el área existe
+            // VALIDACIÓN: Verificar que el área existe
             const [areaExists] = await connection.query(
                 "SELECT id_area FROM areas_de_trabajo WHERE id_area = ?",
                 [id_area_trabajo]
@@ -45,10 +45,10 @@ export const personaService = {
                 throw new Error('El área de trabajo seleccionada no existe');
             }
 
-            // ✅ AGREGAR FECHA_INGRESO (campo requerido)
+            // AGREGAR FECHA_INGRESO (campo requerido)
             const fecha_ingreso = new Date().toISOString().split('T')[0]; // Fecha actual
 
-            // ✅ Insertar persona
+            // Insertar persona
             const [personaResult] = await connection.query(
                 "INSERT INTO personas (dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, fecha_ingreso) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 [dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, fecha_ingreso]
@@ -56,7 +56,7 @@ export const personaService = {
 
             const id_persona = personaResult.insertId;
 
-            // ✅ Si se proporcionaron datos de usuario, crear usuario
+            // Si se proporcionaron datos de usuario, crear usuario
             if (nombre_usuario && contrasena && id_tipo_usuario) {
                 // Validar que el tipo de usuario existe
                 const [tipoUsuarioExists] = await connection.query(
@@ -85,13 +85,13 @@ export const personaService = {
                 [id_persona]
             );
 
-            console.log('✅ Persona creada exitosamente:', nuevaPersona[0]);
+            console.log('Persona creada exitosamente:', nuevaPersona[0]);
             return nuevaPersona[0];
         } catch (error) {
             await connection.rollback();
-            console.error('❌ Error en personaService.create:', error);
+            console.error('Error en personaService.create:', error);
             
-            // ✅ MEJOR MANEJO DE ERRORES ESPECÍFICOS
+            
             if (error.code === 'ER_DUP_ENTRY') {
                 throw new Error('El DNI o email ya existe en el sistema');
             }
@@ -116,7 +116,7 @@ export const personaService = {
 
             return { id, ...personaData };
         } catch (error) {
-            console.error('❌ Error en personaService.update:', error);
+            console.error('Error en personaService.update:', error);
             throw new Error(`Error al actualizar persona: ${error.message}`);
         }
     },
@@ -126,13 +126,13 @@ export const personaService = {
         await connection.beginTransaction();
 
         try {
-            // ✅ Borrado lógico de persona
+           
             await connection.query(
                 "UPDATE personas SET activo = 0 WHERE id_persona = ?",
                 [id]
             );
 
-            // ✅ Desactivar usuario asociado
+            
             await connection.query(
                 "UPDATE usuarios SET activo = 0 WHERE id_persona = ?",
                 [id]
@@ -142,10 +142,88 @@ export const personaService = {
             return { message: "Persona y usuario asociado eliminados correctamente" };
         } catch (error) {
             await connection.rollback();
-            console.error('❌ Error en personaService.remove:', error);
+            console.error('Error en personaService.remove:', error);
             throw new Error(`Error al eliminar persona: ${error.message}`);
         } finally {
             connection.release();
         }
+    },
+
+    updateDescriptorFacial: async (id_persona, descriptor) => {
+        try {
+         
+            const descriptorString = JSON.stringify(Array.from(descriptor));
+            
+            const [result] = await db.query(
+                "UPDATE personas SET descriptor_facial = ? WHERE id_persona = ?",
+                [descriptorString, id_persona]
+            );
+            
+            return result;
+        } catch (error) {
+            console.error('Error actualizando descriptor facial:', error);
+            throw new Error('No se pudo actualizar el descriptor facial');
+        }
+    },
+
+    getDescriptorFacial: async (id_persona) => {
+        const [rows] = await db.query(
+            "SELECT descriptor_facial FROM personas WHERE id_persona = ?",
+            [id_persona]
+        );
+        
+        if (rows.length === 0 || !rows[0].descriptor_facial) {
+            return null;
+        }
+        
+        try {
+            return JSON.parse(rows[0].descriptor_facial);
+        } catch (error) {
+            console.error('Error parseando descriptor facial:', error);
+            return null;
+        }
+    },
+
+    getAllDescriptors: async () => {
+        const [rows] = await db.query(`
+            SELECT 
+                p.id_persona,
+                p.nombres,
+                p.apellidos,
+                p.dni,
+                p.descriptor_facial
+            FROM personas p 
+            WHERE p.activo = 1 
+            AND p.descriptor_facial IS NOT NULL
+            AND p.descriptor_facial != 'null'
+            AND TRIM(p.descriptor_facial) != ''
+        `);
+        
+        const empleadosConDescriptores = rows.map(emp => {
+            try {
+                if (!emp.descriptor_facial) return null;
+                
+                const descriptorArray = typeof emp.descriptor_facial === 'string' 
+                    ? JSON.parse(emp.descriptor_facial)
+                    : emp.descriptor_facial;
+                
+                if (Array.isArray(descriptorArray) && descriptorArray.length > 0) {
+                    return {
+                        id_persona: emp.id_persona,
+                        nombres: emp.nombres,
+                        apellidos: emp.apellidos,
+                        dni: emp.dni,
+                        descriptor: new Float32Array(descriptorArray)
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error(`Error procesando descriptor para ${emp.id_persona}:`, error);
+                return null;
+            }
+        }).filter(emp => emp !== null);
+        
+        return empleadosConDescriptores;
     }
+
 };

@@ -19,11 +19,18 @@ export const verifyToken = async (req, res, next) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         
         // Verificar usuario en BD
-        const [users] = await db.query(
-            `SELECT u.id_usuario, u.activo, u.id_tipo_usuario, p.nombres, p.apellidos 
-             FROM usuarios u 
-             LEFT JOIN personas p ON u.id_persona = p.id_persona 
-             WHERE u.id_usuario = ? AND u.activo = 1`, 
+        const [users] = await db.query(`
+            SELECT 
+                u.id_usuario, 
+                u.activo, 
+                u.id_tipo_usuario,
+                u.id_persona,
+                p.nombres, 
+                p.apellidos,
+                p.dni
+            FROM usuarios u 
+            LEFT JOIN personas p ON u.id_persona = p.id_persona 
+            WHERE u.id_usuario = ? AND u.activo = 1`, 
             [decoded.id]
         );
         
@@ -36,13 +43,19 @@ export const verifyToken = async (req, res, next) => {
 
         // Agregar información completa del usuario
         req.user = {
-            ...decoded,
-            ...users[0]
+            id: decoded.id,
+            id_usuario: users[0].id_usuario,
+            id_persona: users[0].id_persona,
+            id_tipo_usuario: users[0].id_tipo_usuario,
+            nombres: users[0].nombres,
+            apellidos: users[0].apellidos,
+            dni: users[0].dni,
+            role: users[0].id_tipo_usuario // alias para fácil acceso en frontend
         };
         
         next();
     } catch (error) {
-        console.error("❌ Error verificando token:", error);
+        console.error("Error verificando token:", error);
         
         if (error.name === 'TokenExpiredError') {
             return res.status(401).json({ 
@@ -85,6 +98,4 @@ export const requireRole = (allowedRoles = []) => {
 
 // Roles predefinidos para facilidad
 export const requireAdmin = requireRole([1]); // Administrador
-export const requireSupervisor = requireRole([2]); // Supervisor  
-export const requireEmployee = requireRole([3]); // Empleado
-export const requireHR = requireRole([4]); // RRHH
+export const requireEmployee = requireRole([2]); // Empleado  // RRHH

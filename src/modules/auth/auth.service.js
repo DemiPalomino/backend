@@ -45,25 +45,3 @@ export const authService = {
     };
   },
 };
-
-
-/* export const authService = {
-  login: async (usuario, password) => {
-    const [rows] = await db.query("SELECT * FROM usuarios WHERE nombre_usuario = ?", [ usuario ]);
-
-    if (rows.length === 0) throw new Error("Usuario no encontrado");
-
-    const user = rows[0];
-
-    const isMatch = await bcrypt.compare(password, user.contrasena);
-    if (!isMatch) throw new Error("Contraseña incorrecta"); 
-
-    const token = jwt.sign(
-      { id: user.id_usuario, user: user.nombre_usuario, role: user.id_tipo_usuario,id_persona: user.id_persona },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES }
-    );
-
-    return { token, user: { id: user.id_usuario, user: user.nombre_usuario, role: user.id_tipo_usuario, id_persona: user.id_persona } }; 
-  }, 
-}; */

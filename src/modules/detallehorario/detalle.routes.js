@@ -10,7 +10,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 
-// CRUD Usuarios (todos protegidos con JWT salvo el registro si quieres)
+
 router.get("/detalles",verifyToken, getDetallesHorario);
 router.get("/detalle/:id",verifyToken, getDetalleHorario);
 router.post("/detalles/",verifyToken, createDetalleHorario);

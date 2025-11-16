@@ -10,7 +10,6 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 
-// CRUD Usuarios (todos protegidos con JWT salvo el registro si quieres)
 router.get("/tipos",verifyToken, getTiposUsuario);
 router.get("/tipo/:id",verifyToken, getTipoUsuario);
 router.post("/tipos/", verifyToken,createTipoUsuario);

@@ -7,6 +7,7 @@ import {
   deleteAsistencia,
   registrarAsistenciaFacial, 
   obtenerDescriptoresEmpleados, 
+  reconocerYRegistrarAsistencia 
 } from "./asistencia.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 
@@ -20,5 +21,6 @@ router.put("/asistencias/:id", verifyToken,  updateAsistencia);
 router.delete("/asistencias/:id", verifyToken, deleteAsistencia);
 router.post("/asistencias/facial", verifyToken, registrarAsistenciaFacial);
 router.get("/personas/descriptores", verifyToken, obtenerDescriptoresEmpleados);
+router.post("/asistencias/reconocer-facial", verifyToken, reconocerYRegistrarAsistencia);
 
 export default router;

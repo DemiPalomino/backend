@@ -10,7 +10,6 @@ import {
 
 const router = Router();
 
-// ✅ RUTAS ESTANDARIZADAS
 router.get("/permisos", getPermisos);
 router.get("/permisos/:id", getPermiso);
 router.post("/permisos", createPermiso); 

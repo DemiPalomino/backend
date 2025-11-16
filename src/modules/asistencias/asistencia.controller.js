@@ -83,3 +83,32 @@ export const obtenerDescriptoresEmpleados = async (req, res) => {
         res.json([]);
     }
 };
+
+export const reconocerYRegistrarAsistencia = async (req, res) => {
+  try {
+    const { descriptor } = req.body;
+    
+    if (!descriptor || !Array.isArray(descriptor)) {
+      return res.status(400).json({ 
+        error: "Descriptor facial requerido",
+        code: "MISSING_DESCRIPTOR"
+      });
+    }
+
+    const resultado = await asistenciaService.reconocerYRegistrarAsistencia(descriptor);
+    
+    res.json({
+      success: true,
+      ...resultado
+    });
+    
+  } catch (error) {
+    console.error('Error en reconocimiento facial:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      code: "RECOGNITION_ERROR"
+    });
+  }
+};
