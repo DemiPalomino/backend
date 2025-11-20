@@ -2,7 +2,15 @@ import { permisosService } from "./permisos.service.js";
 
 export const getPermisos = async (req, res) => {
     try {
-        const permisos = await permisosService.getAll();
+        const { id_persona } = req.query; 
+        let permisos;
+        
+        if (id_persona) {
+            permisos = await permisosService.getAll(parseInt(id_persona));
+        } else {
+            permisos = await permisosService.getAll();
+        }
+        
         res.json(permisos);
     } catch (error) {
         res.status(500).json({ error: error.message });

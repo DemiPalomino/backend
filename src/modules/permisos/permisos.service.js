@@ -1,14 +1,24 @@
 import db from "../../config/db.js";
 
 export const permisosService = {
-    getAll: async () => {
+    getAll: async (idPersona = null) => {
         try {
-            console.log('Obteniendo todos los permisos...');
-            const [rows] = await db.query(`
+            console.log('Obteniendo permisos...', idPersona ? `para persona: ${idPersona}` : 'todos');
+            let query = `
                 SELECT pj.*, per.nombres, per.apellidos, per.dni 
                 FROM permisos_justificaciones pj 
                 INNER JOIN personas per ON pj.id_persona = per.id_persona
-                ORDER BY pj.fecha_solicitud DESC`);
+            `;
+            let params = [];
+            
+            if (idPersona) {
+                query += ` WHERE pj.id_persona = ?`;
+                params.push(idPersona);
+            }
+            
+            query += ` ORDER BY pj.fecha_solicitud DESC`;
+            
+            const [rows] = await db.query(query, params);
             console.log(`${rows.length} permisos encontrados`);
             return rows;
         } catch (error) {
@@ -44,30 +54,24 @@ export const permisosService = {
                 estado, 
                 id_persona 
             } = permisoData;
-        
 
-            const fechaSolicitudDate = new Date(fecha_solicitud).toISOString().split('T')[0]; // DATE
-            const fechaInicioDatetime = new Date(fecha_inicio_ausencia).toISOString().slice(0, 19).replace('T', ' '); // DATETIME
-            const fechaFinDatetime = new Date(fecha_fin_ausencia).toISOString().slice(0, 19).replace('T', ' '); // DATETIME
+            const fechaSolicitudDate = new Date(fecha_solicitud).toISOString().split('T')[0];
+            const fechaInicioDatetime = new Date(fecha_inicio_ausencia).toISOString().slice(0, 19).replace('T', ' ');
+            const fechaFinDatetime = new Date(fecha_fin_ausencia).toISOString().slice(0, 19).replace('T', ' ');
             
             const [result] = await db.query(
                 "INSERT INTO permisos_justificaciones (fecha_solicitud, fecha_inicio_ausencia, fecha_fin_ausencia, tipo_permiso, justificacion, estado, id_persona) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 [fechaSolicitudDate, fechaInicioDatetime, fechaFinDatetime, tipo_permiso, justificacion, estado, id_persona]
             );
             
-            const nuevoPermiso = {
-                id_permiso: result.insertId,
-                fecha_solicitud: fechaSolicitudDate,
-                fecha_inicio_ausencia: fechaInicioDatetime,
-                fecha_fin_ausencia: fechaFinDatetime,
-                tipo_permiso,
-                justificacion,
-                estado,
-                id_persona
-            };
+            const [nuevoPermiso] = await db.query(`
+                SELECT pj.*, per.nombres, per.apellidos, per.dni 
+                FROM permisos_justificaciones pj 
+                INNER JOIN personas per ON pj.id_persona = per.id_persona 
+                WHERE pj.id_permiso = ?`, [result.insertId]);
             
             console.log('Permiso creado con ID:', result.insertId);
-            return nuevoPermiso;
+            return nuevoPermiso[0];
         } catch (error) {
             console.error('Error en permisosService.create:', error);
             throw new Error(`Error al crear permiso: ${error.message}`);
@@ -76,37 +80,30 @@ export const permisosService = {
 
     update: async (id, permisoData) => {
         try {
+            const camposPermitidos = ['estado', 'justificacion'];
+            const camposActualizar = {};
+
+            Object.keys(permisoData).forEach(key => {
+                if (camposPermitidos.includes(key)) {
+                    camposActualizar[key] = permisoData[key];
+                }
+            });
             
-            const { 
-                fecha_solicitud, 
-                fecha_inicio_ausencia, 
-                fecha_fin_ausencia, 
-                tipo_permiso, 
-                justificacion, 
-                estado, 
-                id_persona 
-            } = permisoData;
-
-          
-            const fechaSolicitudDate = new Date(fecha_solicitud).toISOString().split('T')[0];
-            const fechaInicioDatetime = new Date(fecha_inicio_ausencia).toISOString().slice(0, 19).replace('T', ' ');
-            const fechaFinDatetime = new Date(fecha_fin_ausencia).toISOString().slice(0, 19).replace('T', ' ');
-
+            if (Object.keys(camposActualizar).length === 0) {
+                throw new Error('No hay campos válidos para actualizar');
+            }
+            
+            const setClause = Object.keys(camposActualizar).map(key => `${key} = ?`).join(', ');
+            const valores = Object.values(camposActualizar);
+            valores.push(id);
+            
             await db.query(
-                "UPDATE permisos_justificaciones SET fecha_solicitud=?, fecha_inicio_ausencia=?, fecha_fin_ausencia=?, tipo_permiso=?, justificacion=?, estado=?, id_persona=? WHERE id_permiso=?",
-                [fechaSolicitudDate, fechaInicioDatetime, fechaFinDatetime, tipo_permiso, justificacion, estado, id_persona, id]
+                `UPDATE permisos_justificaciones SET ${setClause} WHERE id_permiso = ?`,
+                valores
             );
             
-            return { 
-                id_permiso: id,
-                fecha_solicitud: fechaSolicitudDate,
-                fecha_inicio_ausencia: fechaInicioDatetime,
-                fecha_fin_ausencia: fechaFinDatetime,
-                tipo_permiso,
-                justificacion,
-                estado,
-                id_persona
-            };
+            // Devolver el permiso actualizado
+            return await permisosService.getById(id);
         } catch (error) {
             console.error('Error en permisosService.update:', error);
             throw new Error(`Error al actualizar permiso: ${error.message}`);
