@@ -6,10 +6,7 @@ import {
   updateArea,
   deleteArea,
 } from "./areas.controller.js";
-
 const router = Router();
-
-// Asegúrate de que las rutas sean consistentes
 router.get("/areas", getAreas);
 router.get("/areas/:id", getArea);
 router.post("/areas", createArea);

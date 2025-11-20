@@ -35,7 +35,7 @@ export const personaService = {
 
             console.log('Datos recibidos para crear persona:', personaData);
 
-            // VALIDACIÓN: Verificar que el área existe
+
             const [areaExists] = await connection.query(
                 "SELECT id_area FROM areas_de_trabajo WHERE id_area = ?",
                 [id_area_trabajo]
@@ -45,10 +45,8 @@ export const personaService = {
                 throw new Error('El área de trabajo seleccionada no existe');
             }
 
-            // AGREGAR FECHA_INGRESO (campo requerido)
-            const fecha_ingreso = new Date().toISOString().split('T')[0]; // Fecha actual
+            const fecha_ingreso = new Date().toISOString().split('T')[0];
 
-            // Insertar persona
             const [personaResult] = await connection.query(
                 "INSERT INTO personas (dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, fecha_ingreso) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 [dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, fecha_ingreso]
@@ -56,9 +54,9 @@ export const personaService = {
 
             const id_persona = personaResult.insertId;
 
-            // Si se proporcionaron datos de usuario, crear usuario
+
             if (nombre_usuario && contrasena && id_tipo_usuario) {
-                // Validar que el tipo de usuario existe
+
                 const [tipoUsuarioExists] = await connection.query(
                     "SELECT id_tipo_usuario FROM tipo_de_usuario WHERE id_tipo_usuario = ?",
                     [id_tipo_usuario]
@@ -68,7 +66,7 @@ export const personaService = {
                     throw new Error('El tipo de usuario seleccionado no existe');
                 }
 
-                // Encriptar contraseña
+                // Se encripta contraseña
                 const hashedPassword = await bcrypt.hash(contrasena, 10);
 
                 await connection.query(
@@ -90,15 +88,15 @@ export const personaService = {
         } catch (error) {
             await connection.rollback();
             console.error('Error en personaService.create:', error);
-            
-            
+
+
             if (error.code === 'ER_DUP_ENTRY') {
                 throw new Error('El DNI o email ya existe en el sistema');
             }
             if (error.code === 'ER_NO_REFERENCED_ROW') {
                 throw new Error('El área de trabajo seleccionada no existe');
             }
-            
+
             throw new Error(`Error al crear persona: ${error.message}`);
         } finally {
             connection.release();
@@ -126,13 +124,13 @@ export const personaService = {
         await connection.beginTransaction();
 
         try {
-           
+
             await connection.query(
                 "UPDATE personas SET activo = 0 WHERE id_persona = ?",
                 [id]
             );
 
-            
+
             await connection.query(
                 "UPDATE usuarios SET activo = 0 WHERE id_persona = ?",
                 [id]
@@ -151,14 +149,13 @@ export const personaService = {
 
     updateDescriptorFacial: async (id_persona, descriptor) => {
         try {
-         
             const descriptorString = JSON.stringify(Array.from(descriptor));
-            
+
             const [result] = await db.query(
                 "UPDATE personas SET descriptor_facial = ? WHERE id_persona = ?",
                 [descriptorString, id_persona]
             );
-            
+
             return result;
         } catch (error) {
             console.error('Error actualizando descriptor facial:', error);
@@ -171,11 +168,11 @@ export const personaService = {
             "SELECT descriptor_facial FROM personas WHERE id_persona = ?",
             [id_persona]
         );
-        
+
         if (rows.length === 0 || !rows[0].descriptor_facial) {
             return null;
         }
-        
+
         try {
             return JSON.parse(rows[0].descriptor_facial);
         } catch (error) {
@@ -183,47 +180,5 @@ export const personaService = {
             return null;
         }
     },
-
-    getAllDescriptors: async () => {
-        const [rows] = await db.query(`
-            SELECT 
-                p.id_persona,
-                p.nombres,
-                p.apellidos,
-                p.dni,
-                p.descriptor_facial
-            FROM personas p 
-            WHERE p.activo = 1 
-            AND p.descriptor_facial IS NOT NULL
-            AND p.descriptor_facial != 'null'
-            AND TRIM(p.descriptor_facial) != ''
-        `);
-        
-        const empleadosConDescriptores = rows.map(emp => {
-            try {
-                if (!emp.descriptor_facial) return null;
-                
-                const descriptorArray = typeof emp.descriptor_facial === 'string' 
-                    ? JSON.parse(emp.descriptor_facial)
-                    : emp.descriptor_facial;
-                
-                if (Array.isArray(descriptorArray) && descriptorArray.length > 0) {
-                    return {
-                        id_persona: emp.id_persona,
-                        nombres: emp.nombres,
-                        apellidos: emp.apellidos,
-                        dni: emp.dni,
-                        descriptor: new Float32Array(descriptorArray)
-                    };
-                }
-                return null;
-            } catch (error) {
-                console.error(`Error procesando descriptor para ${emp.id_persona}:`, error);
-                return null;
-            }
-        }).filter(emp => emp !== null);
-        
-        return empleadosConDescriptores;
-    }
 
 };

@@ -6,10 +6,7 @@ import {
   updateSucursal,
   deleteSucursal,
 } from "./sucursal.controller.js";
-
 const router = Router();
-
-
 router.get("/sucursales",  getSucursals);
 router.get("/sucursales/:id",getSucursal);
 router.post("/sucursales", createSucursal);

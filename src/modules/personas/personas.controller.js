@@ -51,3 +51,30 @@ export const deletePersona = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const updateDescriptorFacial = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { descriptor } = req.body;
+
+        if (!descriptor || !Array.isArray(descriptor)) {
+            return res.status(400).json({ error: "Descriptor facial requerido" });
+        }
+
+        const result = await personaService.updateDescriptorFacial(id, descriptor);
+        res.json({ message: "Descriptor facial actualizado correctamente", result });
+    } catch (error) {
+        console.error('Error en updateDescriptorFacial:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const getDescriptors = async (req, res) => {
+    try {
+        const descriptors = await personaService.getAllDescriptors();
+        res.json(descriptors);
+    } catch (error) {
+        console.error('Error en getDescriptors:', error);
+        res.status(500).json({ error: error.message });
+    }
+};

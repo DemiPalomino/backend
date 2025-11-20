@@ -6,16 +6,11 @@ import {
   updateHorario,
   deleteHorario,
 } from "./horario.controller.js";
-
-
 const router = Router();
-
-
 router.get("/horarios", getHorarios);
 router.get("/horarios/:id", getHorario);
 router.post("/horarios", createHorario);
 router.put("/horarios/:id", updateHorario);
 router.delete("/horarios/:id", deleteHorario);
-
 
 export default router;

@@ -5,7 +5,6 @@ import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import compression from "compression";
 
-// ✅ Importación de rutas
 import userRoutes from "./modules/users/users.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import companyRoutes from "./modules/companys/company.routes.js";
@@ -21,14 +20,13 @@ import tipoUsuariosRoutes from "./modules/tipousuario/tipousuarios.routes.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 
 const app = express();
-// Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
     message: {
         error: "Demasiadas peticiones desde esta IP, intenta nuevamente en 15 minutos"
     }
-});
+}); 
 
 app.use(helmet());
 app.use(limiter);
@@ -51,19 +49,19 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use("/api", authRoutes);           // Autenticación
-app.use("/api", dashboardRoutes);      // Dashboard
-app.use("/api", userRoutes);           // Usuarios
-app.use("/api", personaRoutes);        // Personas
-app.use("/api", areasRoutes);          // Áreas
-app.use("/api", horarioRoutes);        // Horarios
-app.use("/api", detalleHorarioRoutes); // Detalles de horario
-app.use("/api", asistenciaRoutes);     // Asistencias
-app.use("/api", permisosRoutes);       // Permisos
-app.use("/api", feriadosRoutes);       // Feriados
-app.use("/api", companyRoutes);        // Empresa
-app.use("/api", sucursalRoutes);       // Sucursales
-app.use("/api", tipoUsuariosRoutes);   // Tipos de usuario
+app.use("/api", authRoutes);           
+app.use("/api", dashboardRoutes);    
+app.use("/api", userRoutes);          
+app.use("/api", personaRoutes);       
+app.use("/api", areasRoutes);        
+app.use("/api", horarioRoutes);        
+app.use("/api", detalleHorarioRoutes); 
+app.use("/api", asistenciaRoutes);    
+app.use("/api", permisosRoutes);      
+app.use("/api", feriadosRoutes);       
+app.use("/api", companyRoutes);       
+app.use("/api", sucursalRoutes);       
+app.use("/api", tipoUsuariosRoutes);   
 
 app.get("/api/health", (req, res) => {
     res.status(200).json({ 

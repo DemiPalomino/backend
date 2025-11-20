@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import db from "../../config/db.js";
 import { JWT_SECRET, JWT_EXPIRES } from "../../config/config.js";
-//AuthService
 export const authService = {
   login: async (usuario, password) => {
     const [rows] = await db.query(`

@@ -6,11 +6,7 @@ import {
   updateCompany,
   deleteCompany,
 } from "./company.controller.js";
-
-
 const router = Router();
-
-// RUTAS ESTANDARIZADAS
 router.get("/companies", getCompanys);
 router.get("/companies/:id", getCompany);
 router.post("/companies", createCompany);

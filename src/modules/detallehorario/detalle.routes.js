@@ -7,10 +7,7 @@ import {
   deleteDetalleHorario,
 } from "./detalle.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-
 const router = Router();
-
-
 router.get("/detalles",verifyToken, getDetallesHorario);
 router.get("/detalle/:id",verifyToken, getDetalleHorario);
 router.post("/detalles/",verifyToken, createDetalleHorario);

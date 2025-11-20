@@ -7,10 +7,7 @@ import {
   deleteUser,
 } from "./users.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-
 const router = Router();
-
-
 router.get("/users", verifyToken, getUsers);           
 router.get("/users/:id", verifyToken, getUser);                            
 router.post("/users", verifyToken, createUser); 
