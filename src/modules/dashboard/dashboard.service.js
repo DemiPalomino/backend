@@ -51,6 +51,4 @@ export const dashboardService = {
     `);
         return rows;
     }
-
-
 };

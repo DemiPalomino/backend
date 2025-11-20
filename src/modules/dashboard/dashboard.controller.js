@@ -1,4 +1,3 @@
-// Crear: modules/dashboard/dashboard.controller.js
 import { dashboardService } from "./dashboard.service.js";
 
 export const getEstadisticas = async (req, res) => {
