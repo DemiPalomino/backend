@@ -1,27 +1,73 @@
 import db from "../../config/db.js";
 
 export const dashboardService = {
-    getEstadisticas: async () => {
-        const [totalEmpleados] = await db.query("SELECT COUNT(*) as total FROM personas WHERE activo = 1");
-        const [asistenciasHoy] = await db.query("SELECT COUNT(*) as total FROM asistencias WHERE DATE(fecha_ingreso) = CURDATE()");
-        const [ausentesHoy] = await db.query(`
-            SELECT COUNT(*) as total FROM personas p 
-            WHERE p.activo = 1 AND p.id_persona NOT IN (
-                SELECT a.id_persona FROM asistencias a 
-                WHERE DATE(a.fecha_ingreso) = CURDATE()
-            )
-        `);
-        const [tardanzasHoy] = await db.query("SELECT COUNT(*) as total FROM asistencias WHERE DATE(fecha_ingreso) = CURDATE() AND miniTardanza > 0");
+    getEstadisticas: async (userId, userRole, idPersona) => {
+        if (userRole === 2) { // Empleado
+            const [asistenciasHoy] = await db.query(`
+                SELECT COUNT(*) as total FROM asistencias 
+                WHERE DATE(fecha_ingreso) = CURDATE() AND id_persona = ?
+            `, [idPersona]);
+            
+            const [tardanzasHoy] = await db.query(`
+                SELECT COUNT(*) as total FROM asistencias 
+                WHERE DATE(fecha_ingreso) = CURDATE() AND id_persona = ? AND miniTardanza > 0
+            `, [idPersona]);
+
+            return {
+                totalEmpleados: 1,
+                asistenciasHoy: asistenciasHoy[0].total,
+                ausentesHoy: asistenciasHoy[0].total > 0 ? 0 : 1,
+                tardanzasHoy: tardanzasHoy[0].total
+            };
+        } else { // Administrador
+            const [totalEmpleados] = await db.query("SELECT COUNT(*) as total FROM personas WHERE activo = 1");
+            const [asistenciasHoy] = await db.query("SELECT COUNT(*) as total FROM asistencias WHERE DATE(fecha_ingreso) = CURDATE()");
+            const [ausentesHoy] = await db.query(`
+                SELECT COUNT(*) as total FROM personas p 
+                WHERE p.activo = 1 AND p.id_persona NOT IN (
+                    SELECT a.id_persona FROM asistencias a 
+                    WHERE DATE(a.fecha_ingreso) = CURDATE()
+                )
+            `);
+            const [tardanzasHoy] = await db.query("SELECT COUNT(*) as total FROM asistencias WHERE DATE(fecha_ingreso) = CURDATE() AND miniTardanza > 0");
+
+            return {
+                totalEmpleados: totalEmpleados[0].total,
+                asistenciasHoy: asistenciasHoy[0].total,
+                ausentesHoy: ausentesHoy[0].total,
+                tardanzasHoy: tardanzasHoy[0].total
+            };
+        }
+    },
+
+    // Nuevo método para obtener estadísticas del empleado
+    getEstadisticasEmpleado: async (idPersona) => {
+        const [asistenciaHoy] = await db.query(`
+            SELECT * FROM asistencias 
+            WHERE DATE(fecha_ingreso) = CURDATE() AND id_persona = ?
+        `, [idPersona]);
+        
+        const [tardanzasMes] = await db.query(`
+            SELECT COUNT(*) as total FROM asistencias 
+            WHERE id_persona = ? AND MONTH(fecha_ingreso) = MONTH(CURDATE()) 
+            AND YEAR(fecha_ingreso) = YEAR(CURDATE()) AND miniTardanza > 0
+        `, [idPersona]);
+        
+        const [asistenciasMes] = await db.query(`
+            SELECT COUNT(*) as total FROM asistencias 
+            WHERE id_persona = ? AND MONTH(fecha_ingreso) = MONTH(CURDATE()) 
+            AND YEAR(fecha_ingreso) = YEAR(CURDATE())
+        `, [idPersona]);
 
         return {
-            totalEmpleados: totalEmpleados[0].total,
-            asistenciasHoy: asistenciasHoy[0].total,
-            ausentesHoy: ausentesHoy[0].total,
-            tardanzasHoy: tardanzasHoy[0].total
+            asistenciaHoy: asistenciaHoy[0] || null,
+            tardanzasMes: tardanzasMes[0].total,
+            asistenciasMes: asistenciasMes[0].total,
+            fechaConsulta: new Date()
         };
     },
 
-    generarReporteAsistencias: async (fecha_inicio, fecha_fin, id_area = null) => {
+    generarReporteAsistencias: async (fecha_inicio, fecha_fin, id_area = null, idPersona = null) => {
         let query = `
             SELECT a.*, p.nombres, p.apellidos, p.dni, ar.nombre_area 
             FROM asistencias a 
@@ -36,19 +82,33 @@ export const dashboardService = {
             params.push(id_area);
         }
 
+        if (idPersona) {
+            query += " AND a.id_persona = ?";
+            params.push(idPersona);
+        }
+
         query += " ORDER BY a.fecha_ingreso DESC";
 
         const [rows] = await db.query(query, params);
         return rows;
     },
 
-    getTardanzasDelDia: async () => {
-        const [rows] = await db.query(`
-        SELECT p.nombres, p.apellidos, a.miniTardanza 
-        FROM asistencias a 
-        INNER JOIN personas p ON a.id_persona = p.id_persona 
-        WHERE DATE(a.fecha_ingreso) = CURDATE() AND a.miniTardanza > 0
-    `);
+    getTardanzasDelDia: async (idPersona = null) => {
+        let query = `
+            SELECT p.nombres, p.apellidos, a.miniTardanza 
+            FROM asistencias a 
+            INNER JOIN personas p ON a.id_persona = p.id_persona 
+            WHERE DATE(a.fecha_ingreso) = CURDATE() AND a.miniTardanza > 0
+        `;
+        
+        let params = [];
+        
+        if (idPersona) {
+            query += " AND a.id_persona = ?";
+            params.push(idPersona);
+        }
+
+        const [rows] = await db.query(query, params);
         return rows;
     }
 };
