@@ -66,7 +66,6 @@ export const personaService = {
                     throw new Error('El tipo de usuario seleccionado no existe');
                 }
 
-                // Se encripta contraseña
                 const hashedPassword = await bcrypt.hash(contrasena, 10);
 
                 await connection.query(
@@ -77,7 +76,6 @@ export const personaService = {
 
             await connection.commit();
 
-            // Obtener la persona recién creada
             const [nuevaPersona] = await connection.query(
                 "SELECT p.*, a.nombre_area FROM personas p LEFT JOIN areas_de_trabajo a ON p.id_area_trabajo = a.id_area WHERE p.id_persona = ?",
                 [id_persona]
@@ -147,19 +145,82 @@ export const personaService = {
         }
     },
 
-    updateDescriptorFacial: async (id_persona, descriptor) => {
+    updateDescriptorFacial: async (id, descriptor) => {
+        const [result] = await db.query(
+            "UPDATE personas SET descriptor_facial = ? WHERE id_persona = ?",
+            [descriptor, id]
+        );
+
+        if (result.affectedRows === 0) {
+            throw new Error("Persona no encontrada");
+        }
+
+        return {
+            id_persona: id,
+            actualizado: true,
+            descriptor_length: descriptor ? JSON.parse(descriptor).length : 0
+        };
+    },
+
+    getAllDescriptors: async () => {
         try {
-            const descriptorString = JSON.stringify(Array.from(descriptor));
+            console.log('Buscando empleados con descriptores faciales...');
 
-            const [result] = await db.query(
-                "UPDATE personas SET descriptor_facial = ? WHERE id_persona = ?",
-                [descriptorString, id_persona]
-            );
+            const [rows] = await db.query(`
+      SELECT id_persona, nombres, apellidos, dni, descriptor_facial 
+      FROM personas 
+      WHERE activo = 1 AND descriptor_facial IS NOT NULL
+    `);
 
+            console.log(`Encontrados ${rows.length} empleados con descriptores`);
+
+            // Verificar que la consulta devuelve resultados
+            if (rows.length === 0) {
+                console.log('No se encontraron empleados con descriptores faciales');
+                return [];
+            }
+
+            const result = rows.map(row => {
+                try {
+                    const descriptor = row.descriptor_facial ? JSON.parse(row.descriptor_facial) : [];
+
+                    // Validar que el descriptor sea un array válido
+                    if (!Array.isArray(descriptor) || descriptor.length === 0) {
+                        console.warn(`Descriptor inválido para ${row.nombres}`);
+                        return {
+                            id_persona: row.id_persona,
+                            nombres: row.nombres,
+                            apellidos: row.apellidos,
+                            dni: row.dni,
+                            descriptor: []
+                        };
+                    }
+
+                    return {
+                        id_persona: row.id_persona,
+                        nombres: row.nombres,
+                        apellidos: row.apellidos,
+                        dni: row.dni,
+                        descriptor: descriptor
+                    };
+                } catch (parseError) {
+                    console.error(`Error parseando descriptor para ${row.nombres}:`, parseError);
+                    return {
+                        id_persona: row.id_persona,
+                        nombres: row.nombres,
+                        apellidos: row.apellidos,
+                        dni: row.dni,
+                        descriptor: []
+                    };
+                }
+            });
+
+            console.log(`Procesados ${result.length} empleados correctamente`);
             return result;
+
         } catch (error) {
-            console.error('Error actualizando descriptor facial:', error);
-            throw new Error('No se pudo actualizar el descriptor facial');
+            console.error('Error en getAllDescriptors:', error);
+            throw new Error(`Error al obtener descriptores: ${error.message}`);
         }
     },
 
@@ -179,6 +240,6 @@ export const personaService = {
             console.error('Error parseando descriptor facial:', error);
             return null;
         }
-    },
+    }
 
 };
