@@ -54,8 +54,13 @@ export const registrarAsistenciaFacial = async (req, res) => {
       return res.status(400).json({ error: "ID de persona requerido" });
     }
 
+    console.log('Registrando asistencia facial para ID:', id_persona);
+    
     const resultado = await asistenciaService.registrarAsistenciaFacial(id_persona);
+    
+    console.log('Asistencia registrada exitosamente:', resultado);
     res.json(resultado);
+    
   } catch (error) {
     console.error('Error en registro facial:', error);
     res.status(500).json({ 

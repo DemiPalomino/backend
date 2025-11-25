@@ -7,6 +7,8 @@ import {
   deletePersona,
   updateDescriptorFacial,
   getDescriptors,
+  obtenerPersonasConDescriptores,
+    registrarDescriptorFacial,
 } from "./personas.controller.js";
 
 const router = Router();
@@ -18,5 +20,8 @@ router.post("/personas", createPersona);
 router.put("/personas/:id", updatePersona);
 router.delete("/personas/:id", deletePersona);
 router.post("/personas/:id/descriptor", updateDescriptorFacial);
+
+router.get("/personas/descriptores", obtenerPersonasConDescriptores);
+router.post("/personas/:id/descriptor", registrarDescriptorFacial);
 
 export default router;

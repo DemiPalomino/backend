@@ -124,3 +124,27 @@ export const updateDescriptorFacial = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+// En personas.controller.js (backend)
+export const obtenerPersonasConDescriptores = async (req, res) => {
+    try {
+        const personas = await personasService.obtenerConDescriptores();
+        res.json(personas);
+    } catch (error) {
+        console.error('Error en obtenerPersonasConDescriptores:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+export const registrarDescriptorFacial = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { descriptor } = req.body;
+        
+        await personasService.actualizarDescriptor(id, descriptor);
+        res.json({ message: 'Descriptor facial registrado correctamente' });
+    } catch (error) {
+        console.error('Error en registrarDescriptorFacial:', error);
+        res.status(500).json({ error: error.message });
+    }
+};

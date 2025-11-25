@@ -52,7 +52,7 @@ export const asistenciaService = {
             const fecha_actual = new Date();
             const fecha_solo = fecha_actual.toISOString().split('T')[0];
 
-
+            // Verificar persona
             const [persona] = await connection.query(`
                 SELECT p.id_persona, p.activo, h.id_horario
                 FROM personas p
@@ -64,7 +64,7 @@ export const asistenciaService = {
                 throw new Error("Persona no encontrada o inactiva");
             }
 
-
+            // Buscar asistencia del día
             const [asistenciaExistente] = await connection.query(`
                 SELECT id_asistencia, fecha_ingreso, fecha_salida 
                 FROM asistencias 
@@ -77,19 +77,19 @@ export const asistenciaService = {
             if (asistenciaExistente.length > 0) {
                 const ultimaAsistencia = asistenciaExistente[0];
 
-
+                // Si ya tiene salida, registrar nueva entrada
                 if (ultimaAsistencia.fecha_salida) {
                     resultado = await asistenciaService.registrarEntrada(
                         connection, id_persona, fecha_actual, metodo_registro
                     );
                 } else {
-
+                    // Registrar salida
                     resultado = await asistenciaService.registrarSalida(
                         connection, ultimaAsistencia.id_asistencia, fecha_actual
                     );
                 }
             } else {
-
+                // Registrar entrada
                 resultado = await asistenciaService.registrarEntrada(
                     connection, id_persona, fecha_actual, metodo_registro
                 );
@@ -105,5 +105,96 @@ export const asistenciaService = {
         } finally {
             connection.release();
         }
+    },
+
+    // Añadir estas nuevas funciones
+    registrarEntrada: async (connection, id_persona, fecha_actual, metodo_registro) => {
+        // Obtener horario de la persona si existe
+        const [horario] = await connection.query(`
+            SELECT h.hora_entrada 
+            FROM personas p 
+            LEFT JOIN horario h ON p.id_horario = h.id_horario 
+            WHERE p.id_persona = ?
+        `, [id_persona]);
+
+        let miniTardanza = 0;
+
+        // Calcular tardanza si existe horario
+        if (horario.length > 0 && horario[0].hora_entrada) {
+            const horaEntradaHorario = new Date(`${fecha_actual.toDateString()} ${horario[0].hora_entrada}`);
+            const diferencia = fecha_actual - horaEntradaHorario;
+            if (diferencia > 0) {
+                miniTardanza = Math.floor(diferencia / (1000 * 60)); // minutos de tardanza
+            }
+        }
+
+        const [result] = await connection.query(
+            `INSERT INTO asistencias 
+             (id_persona, fecha_ingreso, metodo_registro, miniTardanza, hora_entrada, hora_salida, estado) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+                id_persona,
+                fecha_actual,
+                metodo_registro,
+                miniTardanza,
+                fecha_actual.toTimeString().split(' ')[0],
+                '00:00:00',
+                miniTardanza > 0 ? 'tardanza' : 'completo'
+            ]
+        );
+
+        // Obtener datos de la persona para el response
+        const [personaData] = await connection.query(
+            "SELECT nombres, apellidos, dni FROM personas WHERE id_persona = ?",
+            [id_persona]
+        );
+
+        return {
+            tipo: 'entrada',
+            id_asistencia: result.insertId,
+            fecha_ingreso: fecha_actual,
+            miniTardanza: miniTardanza,
+            mensaje: miniTardanza > 0 
+                ? `Entrada registrada con ${miniTardanza} minutos de tardanza`
+                : 'Entrada registrada exitosamente',
+            persona: personaData[0]
+        };
+    },
+
+    registrarSalida: async (connection, id_asistencia, fecha_actual) => {
+        // Actualizar la salida
+        await connection.query(
+            `UPDATE asistencias 
+             SET fecha_salida = ?, hora_salida = ?, estado = 'completo' 
+             WHERE id_asistencia = ?`,
+            [
+                fecha_actual,
+                fecha_actual.toTimeString().split(' ')[0],
+                id_asistencia
+            ]
+        );
+
+        // Obtener los datos actualizados de la asistencia
+        const [asistenciaData] = await connection.query(`
+            SELECT a.*, p.nombres, p.apellidos, p.dni 
+            FROM asistencias a 
+            INNER JOIN personas p ON a.id_persona = p.id_persona 
+            WHERE a.id_asistencia = ?
+        `, [id_asistencia]);
+
+        const asistencia = asistenciaData[0];
+
+        return {
+            tipo: 'salida',
+            id_asistencia: asistencia.id_asistencia,
+            fecha_salida: fecha_actual,
+            mensaje: 'Salida registrada exitosamente',
+            persona: {
+                id_persona: asistencia.id_persona,
+                nombres: asistencia.nombres,
+                apellidos: asistencia.apellidos,
+                dni: asistencia.dni
+            }
+        };
     }
 }
