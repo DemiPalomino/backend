@@ -26,6 +26,19 @@ export const personaService = {
         }
     },
 
+    getCountByArea: async (id_area_trabajo) => {
+        try {
+            const [rows] = await db.query(
+                "SELECT COUNT(*) as count FROM personas WHERE id_area_trabajo = ? AND activo = 1",
+                [id_area_trabajo]
+            );
+            return rows[0].count;
+        } catch (error) {
+            console.error('Error en personaService.getCountByArea:', error);
+            throw new Error(`Error al contar personas por área: ${error.message}`);
+        }
+    },
+
     create: async (personaData) => {
         const connection = await db.getConnection();
         await connection.beginTransaction();

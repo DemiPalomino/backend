@@ -5,20 +5,42 @@ export const horarioService = {
         try {
             console.log('Obteniendo todos los horarios...');
             const [rows] = await db.query(`
-                SELECT 
-                    h.id_horario,
-                    h.nombre_horario,
-                    h.hora_entrada,
-                    h.hora_salida,
-                    h.id_area_trabajo,
-                    h.estado,
-                    a.nombre_area 
-                FROM horario h 
-                LEFT JOIN areas_de_trabajo a ON h.id_area_trabajo = a.id_area
-                ORDER BY h.nombre_horario
-            `);
-            console.log(`${rows.length} horarios encontrados`);
-            return rows;
+            SELECT 
+                h.id_horario,
+                h.nombre_horario,
+                h.hora_entrada,
+                h.hora_salida,
+                h.id_area_trabajo,
+                h.estado,
+                a.nombre_area 
+            FROM horario h 
+            LEFT JOIN areas_de_trabajo a ON h.id_area_trabajo = a.id_area
+            ORDER BY h.nombre_horario
+        `);
+
+            const horariosConConteo = await Promise.all(
+                rows.map(async (horario) => {
+                    try {
+                        const [countRows] = await db.query(
+                            "SELECT COUNT(*) as empleados_count FROM personas WHERE id_area_trabajo = ? AND activo = 1",
+                            [horario.id_area_trabajo]
+                        );
+                        return {
+                            ...horario,
+                            empleados_count: countRows[0].empleados_count
+                        };
+                    } catch (error) {
+                        console.error(`Error obteniendo conteo para área ${horario.id_area_trabajo}:`, error);
+                        return {
+                            ...horario,
+                            empleados_count: 0
+                        };
+                    }
+                })
+            );
+
+            console.log(`${horariosConConteo.length} horarios encontrados`);
+            return horariosConConteo;
         } catch (error) {
             console.error('Error en horarioService.getAll:', error);
             throw new Error(`Error al obtener horarios: ${error.message}`);
@@ -51,12 +73,12 @@ export const horarioService = {
         try {
             console.log('Creando horario con datos:', horarioData);
             const { nombre_horario, hora_entrada, hora_salida, id_area_trabajo, estado = 1 } = horarioData;
-            
+
             const [result] = await db.query(
                 "INSERT INTO horario (nombre_horario, hora_entrada, hora_salida, id_area_trabajo, estado) VALUES (?, ?, ?, ?, ?)",
                 [nombre_horario, hora_entrada, hora_salida, id_area_trabajo, estado]
             );
-            
+
             const nuevoHorario = {
                 id_horario: result.insertId,
                 nombre_horario,
@@ -65,7 +87,7 @@ export const horarioService = {
                 id_area_trabajo,
                 estado
             };
-            
+
             console.log('Horario creado con ID:', result.insertId);
             return nuevoHorario;
         } catch (error) {
@@ -77,17 +99,17 @@ export const horarioService = {
     update: async (id, horarioData) => {
         try {
             const { nombre_horario, hora_entrada, hora_salida, id_area_trabajo, estado } = horarioData;
-            
+
             await db.query(
                 "UPDATE horario SET nombre_horario=?, hora_entrada=?, hora_salida=?, id_area_trabajo=?, estado=? WHERE id_horario=?",
                 [nombre_horario, hora_entrada, hora_salida, id_area_trabajo, estado, id]
             );
-            
-            return { 
+
+            return {
                 id_horario: id,
-                nombre_horario, 
-                hora_entrada, 
-                hora_salida, 
+                nombre_horario,
+                hora_entrada,
+                hora_salida,
                 id_area_trabajo,
                 estado
             };
