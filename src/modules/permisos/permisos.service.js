@@ -3,7 +3,6 @@ import db from "../../config/db.js";
 export const permisosService = {
     getAll: async (idPersona = null) => {
         try {
-            console.log('Obteniendo permisos...', idPersona ? `para persona: ${idPersona}` : 'todos');
             let query = `
                 SELECT pj.*, per.nombres, per.apellidos, per.dni 
                 FROM permisos_justificaciones pj 
@@ -19,10 +18,8 @@ export const permisosService = {
             query += ` ORDER BY pj.fecha_solicitud DESC`;
             
             const [rows] = await db.query(query, params);
-            console.log(`${rows.length} permisos encontrados`);
             return rows;
         } catch (error) {
-            console.error('Error en permisosService.getAll:', error);
             throw new Error(`Error al obtener permisos: ${error.message}`);
         }
     },
@@ -36,14 +33,12 @@ export const permisosService = {
                 WHERE pj.id_permiso = ?`, [id]);
             return rows[0];
         } catch (error) {
-            console.error('Error en permisosService.getById:', error);
             throw new Error(`Error al obtener permiso: ${error.message}`);
         }
     },
 
     create: async (permisoData) => {
         try {
-            console.log('Creando permiso con datos:', permisoData);
        
             const { 
                 fecha_solicitud, 
@@ -69,11 +64,8 @@ export const permisosService = {
                 FROM permisos_justificaciones pj 
                 INNER JOIN personas per ON pj.id_persona = per.id_persona 
                 WHERE pj.id_permiso = ?`, [result.insertId]);
-            
-            console.log('Permiso creado con ID:', result.insertId);
             return nuevoPermiso[0];
         } catch (error) {
-            console.error('Error en permisosService.create:', error);
             throw new Error(`Error al crear permiso: ${error.message}`);
         }
     },
@@ -105,7 +97,6 @@ export const permisosService = {
             // Devolver el permiso actualizado
             return await permisosService.getById(id);
         } catch (error) {
-            console.error('Error en permisosService.update:', error);
             throw new Error(`Error al actualizar permiso: ${error.message}`);
         }
     },
@@ -115,7 +106,6 @@ export const permisosService = {
             await db.query("DELETE FROM permisos_justificaciones WHERE id_permiso = ?", [id]);
             return { message: "Permiso eliminado correctamente" };
         } catch (error) {
-            console.error('Error en permisosService.remove:', error);
             throw new Error(`Error al eliminar permiso: ${error.message}`);
         }
     },

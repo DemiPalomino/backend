@@ -16,7 +16,6 @@ export const validateRequest = (schema) => {
     };
 };
 
-// Esquemas de validación mejorados
 export const areaSchema = Joi.object({
     nombre_area: Joi.string().min(2).max(100).required().messages({
         'string.min': 'El nombre del área debe tener al menos 2 caracteres',

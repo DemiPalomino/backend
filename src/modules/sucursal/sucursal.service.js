@@ -3,7 +3,6 @@ import db from "../../config/db.js";
 export const sucursalService = {
     getAll: async () => {
         try {
-            console.log('Obteniendo todas las sucursales...');
             const [rows] = await db.query(`
                 SELECT s.*, a.nombre_area 
                 FROM sucursales s 
@@ -11,10 +10,8 @@ export const sucursalService = {
                 WHERE s.activo = 1
                 ORDER BY s.nombre_sucursal
             `);
-            console.log(`${rows.length} sucursales encontradas`);
             return rows;
         } catch (error) {
-            console.error('Error en sucursalService.getAll:', error);
             throw new Error(`Error al obtener sucursales: ${error.message}`);
         }
     },
@@ -29,14 +26,12 @@ export const sucursalService = {
             `, [id]);
             return rows[0];
         } catch (error) {
-            console.error('Error en sucursalService.getById:', error);
             throw new Error(`Error al obtener sucursal: ${error.message}`);
         }
     },
 
     create: async (sucursalData) => {
         try {
-            console.log('Creando sucursal con datos:', sucursalData);
             
             const { nombre_sucursal, direccion, telefono, id_area_trabajo } = sucursalData;
             
@@ -54,11 +49,9 @@ export const sucursalService = {
                 activo: 1
             };
             
-            console.log('Sucursal creada con ID:', result.insertId);
             return nuevaSucursal;
             
         } catch (error) {
-            console.error('Error en sucursalService.create:', error);
             throw new Error(`Error al crear sucursal: ${error.message}`);
         }
     },
@@ -81,7 +74,6 @@ export const sucursalService = {
                 id_area_trabajo: id_area_trabajo || null
             };
         } catch (error) {
-            console.error('Error en sucursalService.update:', error);
             throw new Error(`Error al actualizar sucursal: ${error.message}`);
         }
     },
@@ -95,7 +87,6 @@ export const sucursalService = {
             );
             return { message: "Sucursal eliminada correctamente" };
         } catch (error) {
-            console.error('Error en sucursalService.remove:', error);
             throw new Error(`Error al eliminar sucursal: ${error.message}`);
         }
     },

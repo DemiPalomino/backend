@@ -3,7 +3,6 @@ import db from "../../config/db.js";
 export const horarioService = {
     getAll: async () => {
         try {
-            console.log('Obteniendo todos los horarios...');
             const [rows] = await db.query(`
             SELECT 
                 h.id_horario,
@@ -30,7 +29,6 @@ export const horarioService = {
                             empleados_count: countRows[0].empleados_count
                         };
                     } catch (error) {
-                        console.error(`Error obteniendo conteo para área ${horario.id_area_trabajo}:`, error);
                         return {
                             ...horario,
                             empleados_count: 0
@@ -38,11 +36,8 @@ export const horarioService = {
                     }
                 })
             );
-
-            console.log(`${horariosConConteo.length} horarios encontrados`);
             return horariosConConteo;
         } catch (error) {
-            console.error('Error en horarioService.getAll:', error);
             throw new Error(`Error al obtener horarios: ${error.message}`);
         }
     },
@@ -64,14 +59,12 @@ export const horarioService = {
             `, [id]);
             return rows[0];
         } catch (error) {
-            console.error('Error en horarioService.getById:', error);
             throw new Error(`Error al obtener horario: ${error.message}`);
         }
     },
 
     create: async (horarioData) => {
         try {
-            console.log('Creando horario con datos:', horarioData);
             const { nombre_horario, hora_entrada, hora_salida, id_area_trabajo, estado = 1 } = horarioData;
 
             const [result] = await db.query(
@@ -88,10 +81,8 @@ export const horarioService = {
                 estado
             };
 
-            console.log('Horario creado con ID:', result.insertId);
             return nuevoHorario;
         } catch (error) {
-            console.error('Error en horarioService.create:', error);
             throw new Error(`Error al crear horario: ${error.message}`);
         }
     },
@@ -114,7 +105,6 @@ export const horarioService = {
                 estado
             };
         } catch (error) {
-            console.error('Error en horarioService.update:', error);
             throw new Error(`Error al actualizar horario: ${error.message}`);
         }
     },
@@ -124,7 +114,6 @@ export const horarioService = {
             await db.query("DELETE FROM horario WHERE id_horario = ?", [id]);
             return { message: "Horario eliminado correctamente" };
         } catch (error) {
-            console.error('Error en horarioService.remove:', error);
             throw new Error(`Error al eliminar horario: ${error.message}`);
         }
     },

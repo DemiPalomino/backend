@@ -52,7 +52,6 @@ export const asistenciaService = {
             const fecha_actual = new Date();
             const fecha_solo = fecha_actual.toISOString().split('T')[0];
 
-            // Verificar persona
             const [persona] = await connection.query(`
                 SELECT p.id_persona, p.activo, h.id_horario
                 FROM personas p
@@ -64,7 +63,6 @@ export const asistenciaService = {
                 throw new Error("Persona no encontrada o inactiva");
             }
 
-            // Buscar asistencia del día
             const [asistenciaExistente] = await connection.query(`
                 SELECT id_asistencia, fecha_ingreso, fecha_salida 
                 FROM asistencias 
@@ -124,7 +122,7 @@ export const asistenciaService = {
             const horaEntradaHorario = new Date(`${fecha_actual.toDateString()} ${horario[0].hora_entrada}`);
             const diferencia = fecha_actual - horaEntradaHorario;
             if (diferencia > 0) {
-                miniTardanza = Math.floor(diferencia / (1000 * 60)); // minutos de tardanza
+                miniTardanza = Math.floor(diferencia / (1000 * 60));
             }
         }
 
@@ -143,7 +141,6 @@ export const asistenciaService = {
             ]
         );
 
-        // Obtener datos de la persona para el response
         const [personaData] = await connection.query(
             "SELECT nombres, apellidos, dni FROM personas WHERE id_persona = ?",
             [id_persona]
@@ -162,7 +159,6 @@ export const asistenciaService = {
     },
 
     registrarSalida: async (connection, id_asistencia, fecha_actual) => {
-        // Actualizar la salida
         await connection.query(
             `UPDATE asistencias 
              SET fecha_salida = ?, hora_salida = ?, estado = 'completo' 
@@ -174,7 +170,6 @@ export const asistenciaService = {
             ]
         );
 
-        // Obtener los datos actualizados de la asistencia
         const [asistenciaData] = await connection.query(`
             SELECT a.*, p.nombres, p.apellidos, p.dni 
             FROM asistencias a 

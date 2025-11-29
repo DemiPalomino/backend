@@ -15,47 +15,50 @@ export const verifyToken = async (req, res, next) => {
                 code: "MISSING_TOKEN"
             });
         }
-
         const decoded = jwt.verify(token, JWT_SECRET);
-        
-        // Verificar usuario en BD
+        // verificando el usuario en BD
         const [users] = await db.query(`
             SELECT 
                 u.id_usuario, 
-                u.activo, 
                 u.id_tipo_usuario,
                 u.id_persona,
                 p.nombres, 
                 p.apellidos,
-                p.dni
+                p.dni,
+                p.activo as persona_activa
             FROM usuarios u 
             LEFT JOIN personas p ON u.id_persona = p.id_persona 
-            WHERE u.id_usuario = ? AND u.activo = 1`, 
+            WHERE u.id_usuario = ?`, 
             [decoded.id]
         );
         
         if (users.length === 0) {
             return res.status(401).json({ 
-                error: "Usuario no encontrado o inactivo",
+                error: "Usuario no encontrado",
                 code: "USER_NOT_FOUND"
             });
         }
+        const userData = users[0];
+        // verificando si la persona está activa
+        if (userData.persona_activa !== 1) {
+            return res.status(401).json({ 
+                error: "Usuario inactivo",
+                code: "USER_INACTIVE"
+            });
+        }
 
-        // Agregar información completa del usuario
         req.user = {
             id: decoded.id,
-            id_usuario: users[0].id_usuario,
-            id_persona: users[0].id_persona,
-            id_tipo_usuario: users[0].id_tipo_usuario,
-            nombres: users[0].nombres,
-            apellidos: users[0].apellidos,
-            dni: users[0].dni,
-            role: users[0].id_tipo_usuario // alias para fácil acceso en frontend
+            id_usuario: userData.id_usuario,
+            id_persona: userData.id_persona,
+            id_tipo_usuario: userData.id_tipo_usuario,
+            nombres: userData.nombres,
+            apellidos: userData.apellidos,
+            dni: userData.dni,
+            role: userData.id_tipo_usuario 
         };
-        
         next();
     } catch (error) {
-        console.error("Error verificando token:", error);
         
         if (error.name === 'TokenExpiredError') {
             return res.status(401).json({ 
@@ -78,7 +81,6 @@ export const verifyToken = async (req, res, next) => {
     }
 };
 
-// Middleware de roles dinámico
 export const requireRole = (allowedRoles = []) => {
     return (req, res, next) => {
         if (!req.user) {
@@ -96,6 +98,5 @@ export const requireRole = (allowedRoles = []) => {
     };
 };
 
-// Roles predefinidos para facilidad
-export const requireAdmin = requireRole([1]); // Administrador
-export const requireEmployee = requireRole([2]); // Empleado  // RRHH
+export const requireAdmin = requireRole([1]); 
+export const requireEmployee = requireRole([2]);

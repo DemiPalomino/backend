@@ -4,7 +4,6 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import compression from "compression";
-
 import userRoutes from "./modules/users/users.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import companyRoutes from "./modules/companys/company.routes.js";
@@ -81,13 +80,13 @@ app.use((err, req, res, next) => {
     });
 });
 
-
+/* 
 app.use("*", (req, res) => {
     res.status(404).json({ 
         error: "Ruta no encontrada",
         path: req.originalUrl,
         method: req.method
     });
-});
+}); */
 
 export default app;

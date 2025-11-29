@@ -2,15 +2,16 @@ import { Router } from "express";
 import {
   getEstadisticas,
   getReporteAsistencias,
-  getEstadisticasEmpleado
+  getEstadisticasEmpleado,
+  getAreasConEmpleados
 } from "./dashboard.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 
-// Todas las rutas protegidas
 router.get("/dashboard/estadisticas", verifyToken, getEstadisticas);
 router.get("/dashboard/estadisticas/empleado", verifyToken, getEstadisticasEmpleado);
 router.get("/dashboard/reportes/asistencias", verifyToken, getReporteAsistencias);
+router.get("/dashboard/areas", verifyToken, getAreasConEmpleados);
 
 export default router;

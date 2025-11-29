@@ -5,18 +5,14 @@ export const getPersonas = async (req, res) => {
         const personas = await personaService.getAll();
         res.json(personas);
     } catch (error) {
-        console.error('Error en getPersonas:', error);
         res.status(500).json({ error: error.message });
     }
 };
 
 export const getDescriptors = async (req, res) => {
   try {
-    console.log(' GET /personas/descriptores - Solicitando descriptores...');
     
     const descriptors = await personaService.getAllDescriptors();
-    
-    console.log(`Enviando ${descriptors.length} empleados con descriptores`);
     
     // Asegurar que siempre devolvemos un array
     const result = descriptors || [];
@@ -33,7 +29,6 @@ export const getDescriptors = async (req, res) => {
     res.json(result);
     
   } catch (error) {
-    console.error('Error completo en getDescriptors:', error);
     res.status(500).json({ 
       error: error.message,
       details: 'Error al obtener lista de descriptores faciales',
@@ -45,10 +40,8 @@ export const getDescriptors = async (req, res) => {
 export const getPersona = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(`Buscando persona con ID: ${id}`);
 
     if (id === 'descriptores') {
-      console.error('Error: Ruta /personas/descriptores está siendo capturada por getPersona');
       return res.status(404).json({ 
         error: "Ruta no encontrada. Use /api/personas/descriptores" 
       });
@@ -61,18 +54,15 @@ export const getPersona = async (req, res) => {
     
     res.json(persona);
   } catch (error) {
-    console.error('Error en getPersona:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
 export const createPersona = async (req, res) => {
     try {
-        console.log('Creando persona con datos:', req.body);
         const persona = await personaService.create(req.body);
         res.status(201).json(persona);
     } catch (error) {
-        console.error('Error en createPersona:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -82,7 +72,6 @@ export const updatePersona = async (req, res) => {
         const persona = await personaService.update(req.params.id, req.body);
         res.json(persona);
     } catch (error) {
-        console.error('Error en updatePersona:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -92,7 +81,6 @@ export const deletePersona = async (req, res) => {
         const result = await personaService.remove(req.params.id);
         res.json(result);
     } catch (error) {
-        console.error('Error en deletePersona:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -101,9 +89,6 @@ export const updateDescriptorFacial = async (req, res) => {
     try {
         const { id } = req.params;
         const { descriptor } = req.body;
-
-        console.log('Actualizando descriptor facial para ID:', id);
-        console.log('Descriptor recibido (primeros 5 elementos):', descriptor ? descriptor.slice(0, 5) : 'No definido');
 
         if (!descriptor || !Array.isArray(descriptor)) {
             return res.status(400).json({ error: "Descriptor facial requerido y debe ser un array" });
@@ -120,7 +105,6 @@ export const updateDescriptorFacial = async (req, res) => {
             elementos_descriptor: descriptor.length
         });
     } catch (error) {
-        console.error('Error en updateDescriptorFacial:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -131,7 +115,6 @@ export const obtenerPersonasConDescriptores = async (req, res) => {
         const personas = await personasService.obtenerConDescriptores();
         res.json(personas);
     } catch (error) {
-        console.error('Error en obtenerPersonasConDescriptores:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -144,7 +127,6 @@ export const registrarDescriptorFacial = async (req, res) => {
         await personasService.actualizarDescriptor(id, descriptor);
         res.json({ message: 'Descriptor facial registrado correctamente' });
     } catch (error) {
-        console.error('Error en registrarDescriptorFacial:', error);
         res.status(500).json({ error: error.message });
     }
 };

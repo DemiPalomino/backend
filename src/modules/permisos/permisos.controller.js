@@ -29,12 +29,9 @@ export const getPermiso = async (req, res) => {
 
 export const createPermiso = async (req, res) => {
     try {
-        console.log(' Recibiendo solicitud de permiso:', req.body);
         const permiso = await permisosService.create(req.body);
-        console.log('Permiso creado exitosamente:', permiso);
         res.status(201).json(permiso);
     } catch (error) {
-        console.error('Error en createPermiso:', error);
         res.status(500).json({ 
             error: error.message,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined

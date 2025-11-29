@@ -20,7 +20,6 @@ router.post("/personas", createPersona);
 router.put("/personas/:id", updatePersona);
 router.delete("/personas/:id", deletePersona);
 router.post("/personas/:id/descriptor", updateDescriptorFacial);
-
 router.get("/personas/descriptores", obtenerPersonasConDescriptores);
 router.post("/personas/:id/descriptor", registrarDescriptorFacial);
 

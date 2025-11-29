@@ -9,7 +9,6 @@ export const personaService = {
             );
             return rows;
         } catch (error) {
-            console.error(' Error en personaService.getAll:', error);
             throw new Error(`Error al obtener personas: ${error.message}`);
         }
     },
@@ -34,7 +33,6 @@ export const personaService = {
             );
             return rows[0].count;
         } catch (error) {
-            console.error('Error en personaService.getCountByArea:', error);
             throw new Error(`Error al contar personas por área: ${error.message}`);
         }
     },
@@ -45,9 +43,6 @@ export const personaService = {
 
         try {
             const { dni, nombres, apellidos, email, telefono, fecha_nacimiento, id_area_trabajo, nombre_usuario, contrasena, id_tipo_usuario } = personaData;
-
-            console.log('Datos recibidos para crear persona:', personaData);
-
 
             const [areaExists] = await connection.query(
                 "SELECT id_area FROM areas_de_trabajo WHERE id_area = ?",
@@ -94,11 +89,9 @@ export const personaService = {
                 [id_persona]
             );
 
-            console.log('Persona creada exitosamente:', nuevaPersona[0]);
             return nuevaPersona[0];
         } catch (error) {
             await connection.rollback();
-            console.error('Error en personaService.create:', error);
 
 
             if (error.code === 'ER_DUP_ENTRY') {
@@ -125,7 +118,6 @@ export const personaService = {
 
             return { id, ...personaData };
         } catch (error) {
-            console.error('Error en personaService.update:', error);
             throw new Error(`Error al actualizar persona: ${error.message}`);
         }
     },
@@ -151,7 +143,6 @@ export const personaService = {
             return { message: "Persona y usuario asociado eliminados correctamente" };
         } catch (error) {
             await connection.rollback();
-            console.error('Error en personaService.remove:', error);
             throw new Error(`Error al eliminar persona: ${error.message}`);
         } finally {
             connection.release();
@@ -177,7 +168,6 @@ export const personaService = {
 
     getAllDescriptors: async () => {
         try {
-            console.log('Buscando empleados con descriptores faciales...');
 
             const [rows] = await db.query(`
       SELECT id_persona, nombres, apellidos, dni, descriptor_facial 
@@ -185,11 +175,8 @@ export const personaService = {
       WHERE activo = 1 AND descriptor_facial IS NOT NULL
     `);
 
-            console.log(`Encontrados ${rows.length} empleados con descriptores`);
-
             // Verificar que la consulta devuelve resultados
             if (rows.length === 0) {
-                console.log('No se encontraron empleados con descriptores faciales');
                 return [];
             }
 
@@ -199,7 +186,6 @@ export const personaService = {
 
                     // Validar que el descriptor sea un array válido
                     if (!Array.isArray(descriptor) || descriptor.length === 0) {
-                        console.warn(`Descriptor inválido para ${row.nombres}`);
                         return {
                             id_persona: row.id_persona,
                             nombres: row.nombres,
@@ -217,7 +203,6 @@ export const personaService = {
                         descriptor: descriptor
                     };
                 } catch (parseError) {
-                    console.error(`Error parseando descriptor para ${row.nombres}:`, parseError);
                     return {
                         id_persona: row.id_persona,
                         nombres: row.nombres,
@@ -228,11 +213,9 @@ export const personaService = {
                 }
             });
 
-            console.log(`Procesados ${result.length} empleados correctamente`);
             return result;
 
         } catch (error) {
-            console.error('Error en getAllDescriptors:', error);
             throw new Error(`Error al obtener descriptores: ${error.message}`);
         }
     },
@@ -250,7 +233,6 @@ export const personaService = {
         try {
             return JSON.parse(rows[0].descriptor_facial);
         } catch (error) {
-            console.error('Error parseando descriptor facial:', error);
             return null;
         }
     }
